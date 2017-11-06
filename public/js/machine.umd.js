@@ -493,7 +493,7 @@ PartBuilder.buildWires = function buildWires(){
         }
 
         const meow = def.actionName + def.transform + ' > ' + def.stateName; // todo assert def has cmd at start
-        scope.bus().meow(meow);
+        scope.bus().context(script).meow(meow);
 
     }
 
@@ -581,7 +581,7 @@ PartBuilder.buildActions = function buildActions(){
 
         if(def.to){
             const meow = def.name + def.to; // todo assert def has cmd at start
-            scope.bus().meow(meow);
+            scope.bus().context(this.script).meow(meow);
         }
     }
 

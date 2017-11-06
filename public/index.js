@@ -1,6 +1,10 @@
 
 Machine.cog({
 
+    mount: function(){
+
+    },
+
     display:
 
         '<div>' +
@@ -9,10 +13,20 @@ Machine.cog({
         '<slot name="babbage"></slot>',
 
     aliases: {
+
         APP_ROOT: './app',
         JS: './js',
         LOVELACE: 'APP_ROOT lovelace.js',
         D3: 'JS d3.min.js'
+
+    },
+
+    states: {
+        counter: 5
+    },
+
+    actions: {
+        incCounter: '| counter * addOne > counter'
     },
 
     libs: {
@@ -21,6 +35,10 @@ Machine.cog({
 
     cogs: {
         babbage: 'LOVELACE'
+    },
+
+    addOne: function(msg){
+        return msg + 1;
     }
 
 });
