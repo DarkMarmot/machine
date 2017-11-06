@@ -88,10 +88,13 @@ ScriptLoader.onLoad = function onLoad(e){
     status.loaded[src] = true;
 
     cache[src] = ScriptLoader.currentScript;
-    ScriptLoader.currentScript.url = src;
-    ScriptLoader.currentScript.root = toRoot$1(src);
 
-    console.log(cache);
+    if(ScriptLoader.currentScript.__machine) { // to avoid modifying AMD libs
+        ScriptLoader.currentScript.url = src;
+        ScriptLoader.currentScript.root = toRoot$1(src);
+    }
+
+    //console.log(cache);
     cleanup(e);
 
     const listeners = listenersByUrl[src] || [];
@@ -4086,7 +4089,7 @@ Cog.prototype.prep = function(){
 Cog.prototype.loadBooks = function loadBooks(){
 
     if(this.script.books.length === 0) {
-        this.loadTraits();
+        this.loadLibs();
         return;
     }
 
@@ -4120,6 +4123,45 @@ Cog.prototype.readBooks = function readBooks() {
             console.log('EXPECTED BOOK: got ', book.type, book.url);
 
         this.aliasContext.injectAliasList(book.alias);
+
+    }
+
+    this.loadLibs();
+
+};
+
+
+Cog.prototype.loadLibs = function loadLibs(){
+
+    const defs = [];
+    const script = this.script;
+
+    for(const name in script.libs){
+        const def = script.libs[name];
+        defs.push(def);
+    }
+
+    const urls = this.libUrls = this.aliasContext.freshUrls(defs);
+
+    if (urls.length) {
+        this.scriptMonitor = new ScriptMonitor(urls, this.buildLibs.bind(this));
+    } else {
+        this.buildLibs();
+    }
+
+};
+
+Cog.prototype.buildLibs = function buildLibs() {
+
+    const script = this.script;
+    const libs = script.libs;
+    const context = this.aliasContext;
+
+    for (const name in libs) {
+        const def = libs[name];
+        const url = context.resolveUrl(def.url);
+        const lib = ScriptLoader.read(url);
+        script[name] = lib;
 
     }
 
@@ -4475,8 +4517,22 @@ function _ASSERT_HTML_ELEMENT_EXISTS(name, el){
 }
 
 let Machine = {};
+
 const NOOP = function(){};
 const TRUE = function(){ return true;};
+
+const define = window.define = function define(){
+
+    const lastArg = arguments[arguments.length - 1];
+    const exports = {};
+    const lib = lastArg(exports);
+    ScriptLoader.currentScript = lib || exports;
+
+};
+
+define.amd = true;
+
+Machine.lib = define;
 
 Machine.init = function init(slot, url){
 
@@ -4486,9 +4542,8 @@ Machine.init = function init(slot, url){
 };
 
 const defaultMethods = ['prep','init','mount','start','unmount','destroy'];
-const defaultArrays = ['alias', 'traits', 'states', 'actions', 'buses', 'books', 'relays'];
-const defaultHashes = ['els', 'cogs', 'chains', 'gears', 'methods', 'events'];
-
+const defaultArrays = ['traits',  'buses', 'books', 'relays'];
+const defaultHashes = ['aliases','els', 'libs', 'states', 'actions','cogs', 'chains', 'gears', 'events'];
 
 
 function createWhiteList(v){
@@ -4503,6 +4558,23 @@ function createWhiteList(v){
     }
 
     return TRUE;
+}
+
+function prepLibDefs(data){
+
+    if(!data)
+        return data;
+
+    for(const name in data){
+
+        const val = data[name];
+        const def = val && typeof val === 'string' ? {url: val} : val;
+        data[name] = def;
+
+    }
+
+    return data;
+
 }
 
 function prepCogDefs(data){
@@ -4679,7 +4751,7 @@ function prepActionDefs(data){
 
 Machine.cog = function cog(def){
 
-
+    def.__machine = true;
     def.id = 0;
     def.api = null;
     def.config = null;
@@ -4703,6 +4775,7 @@ Machine.cog = function cog(def){
 
     splitCalcDefs(def);
 
+    def.libs = prepLibDefs(def.libs);
     def.cogs = prepCogDefs(def.cogs);
     def.gears = prepCogDefs(def.gears);
     def.states = prepStateDefs(def.states);
@@ -4716,6 +4789,7 @@ Machine.cog = function cog(def){
 
 Machine.trait = function trait(def){
 
+    def.__machine = true;
     def.type = 'trait';
     def.config = null;
     def.cog = null; // becomes cog script instance
@@ -4732,6 +4806,7 @@ Machine.trait = function trait(def){
 
 Machine.book = function book(def){
 
+    def.__machine = true;
     def.type = 'book';
     ScriptLoader.currentScript = def;
 

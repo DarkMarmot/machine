@@ -1,12 +1,13 @@
 {
   "name": "machine-framework",
   "version": "1.0.0",
-  "description": "",
+  "description": "self-assembling client-side web framework",
   "main": "machine.js",
   "scripts": {
     "test": "rollup -c rollup.config.umd.js && cp ./dist/* ./public/js && mocha",
     "min": "rollup -c rollup.config.min.umd.js",
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "start": "node server.js"
   },
   "author": "Scott Southworth <scott.southworth@gmail.com> (https://twitter.com/DarkMarmot)",
   "license": "Apache-2.0",
@@ -23,6 +24,22 @@
     "finalhandler": "^1.0.3",
     "serve-static": "^1.12.3"
   },
-  "dependencies": {
-  }
+  "dependencies": {},
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DarkMarmot/machine.git"
+  },
+  "keywords": [
+    "self-assembling",
+    "code-splitting",
+    "client-side",
+    "framework"
+  ],
+  "bugs": {
+    "url": "https://github.com/DarkMarmot/machine/issues"
+  },
+  "homepage": "https://github.com/DarkMarmot/machine#readme"
 }

@@ -4,8 +4,22 @@ import ScriptMonitor from './scriptMonitor.js';
 import Cog from './cog.js';
 
 let Machine = {};
+
 const NOOP = function(){};
 const TRUE = function(){ return true;};
+
+const define = window.define = function define(){
+
+    const lastArg = arguments[arguments.length - 1];
+    const exports = {};
+    const lib = lastArg(exports);
+    ScriptLoader.currentScript = lib || exports;
+
+};
+
+define.amd = true;
+
+Machine.lib = define;
 
 Machine.init = function init(slot, url){
 
@@ -15,9 +29,8 @@ Machine.init = function init(slot, url){
 };
 
 const defaultMethods = ['prep','init','mount','start','unmount','destroy'];
-const defaultArrays = ['alias', 'traits', 'states', 'actions', 'buses', 'books', 'relays'];
-const defaultHashes = ['els', 'cogs', 'chains', 'gears', 'methods', 'events'];
-
+const defaultArrays = ['traits',  'buses', 'books', 'relays'];
+const defaultHashes = ['aliases','els', 'libs', 'states', 'actions','cogs', 'chains', 'gears', 'events'];
 
 
 function createWhiteList(v){
@@ -32,6 +45,23 @@ function createWhiteList(v){
     }
 
     return TRUE;
+}
+
+function prepLibDefs(data){
+
+    if(!data)
+        return data;
+
+    for(const name in data){
+
+        const val = data[name];
+        const def = val && typeof val === 'string' ? {url: val} : val;
+        data[name] = def;
+
+    }
+
+    return data;
+
 }
 
 function prepCogDefs(data){
@@ -225,7 +255,7 @@ function prepActionDefs(data){
 
 Machine.cog = function cog(def){
 
-
+    def.__machine = true;
     def.id = 0;
     def.api = null;
     def.config = null;
@@ -249,6 +279,7 @@ Machine.cog = function cog(def){
 
     splitCalcDefs(def);
 
+    def.libs = prepLibDefs(def.libs);
     def.cogs = prepCogDefs(def.cogs);
     def.gears = prepCogDefs(def.gears);
     def.states = prepStateDefs(def.states);
@@ -262,6 +293,7 @@ Machine.cog = function cog(def){
 
 Machine.trait = function trait(def){
 
+    def.__machine = true;
     def.type = 'trait';
     def.config = null;
     def.cog = null; // becomes cog script instance
@@ -278,6 +310,7 @@ Machine.trait = function trait(def){
 
 Machine.book = function book(def){
 
+    def.__machine = true;
     def.type = 'book';
     ScriptLoader.currentScript = def;
 

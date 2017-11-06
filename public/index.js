@@ -10,7 +10,13 @@ Machine.cog({
 
     aliases: {
         APP_ROOT: './app',
-        LOVELACE: 'APP_ROOT lovelace.js'
+        JS: './js',
+        LOVELACE: 'APP_ROOT lovelace.js',
+        D3: 'JS d3.min.js'
+    },
+
+    libs: {
+        d3: 'D3'
     },
 
     cogs: {

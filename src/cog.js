@@ -148,7 +148,7 @@ Cog.prototype.prep = function(){
 Cog.prototype.loadBooks = function loadBooks(){
 
     if(this.script.books.length === 0) {
-        this.loadTraits();
+        this.loadLibs();
         return;
     }
 
@@ -182,6 +182,45 @@ Cog.prototype.readBooks = function readBooks() {
             console.log('EXPECTED BOOK: got ', book.type, book.url);
 
         this.aliasContext.injectAliasList(book.alias);
+
+    }
+
+    this.loadLibs();
+
+};
+
+
+Cog.prototype.loadLibs = function loadLibs(){
+
+    const defs = [];
+    const script = this.script;
+
+    for(const name in script.libs){
+        const def = script.libs[name];
+        defs.push(def);
+    }
+
+    const urls = this.libUrls = this.aliasContext.freshUrls(defs);
+
+    if (urls.length) {
+        this.scriptMonitor = new ScriptMonitor(urls, this.buildLibs.bind(this));
+    } else {
+        this.buildLibs();
+    }
+
+};
+
+Cog.prototype.buildLibs = function buildLibs() {
+
+    const script = this.script;
+    const libs = script.libs;
+    const context = this.aliasContext;
+
+    for (const name in libs) {
+        const def = libs[name];
+        const url = context.resolveUrl(def.url);
+        const lib = ScriptLoader.read(url);
+        script[name] = lib;
 
     }
 

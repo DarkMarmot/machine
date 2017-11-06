@@ -39,10 +39,13 @@ ScriptLoader.onLoad = function onLoad(e){
     status.loaded[src] = true;
 
     cache[src] = ScriptLoader.currentScript;
-    ScriptLoader.currentScript.url = src;
-    ScriptLoader.currentScript.root = toRoot(src);
 
-    console.log(cache);
+    if(ScriptLoader.currentScript.__machine) { // to avoid modifying AMD libs
+        ScriptLoader.currentScript.url = src;
+        ScriptLoader.currentScript.root = toRoot(src);
+    }
+
+    //console.log(cache);
     cleanup(e);
 
     const listeners = listenersByUrl[src] || [];
