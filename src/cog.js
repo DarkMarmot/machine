@@ -297,18 +297,6 @@ Cog.prototype.buildBuses = function buildBuses(){
 };
 
 
-//
-// Cog.prototype.buildBusFromNyan = function buildBusFromNyan(nyanStr, el){
-//     return this.scope.bus(nyanStr, this.script, el);
-// };
-//
-// Cog.prototype.buildBusFromFunction = function buildBusFromFunction(f, el){
-//
-//     //const bus = this.scope.bus()
-// };
-
-
-
 Cog.prototype.buildCogs = function buildCogs(){
 
     const cogs = this.script.cogs;
@@ -399,7 +387,7 @@ Cog.prototype.buildChains = function buildChains(){
         const slot = this.namedSlots[slotName];
 
         const url = aliasContext.resolveUrl(def.url, def.root);
-        const chain = new Chain(url, slot, this, def.config, def.source);
+        const chain = new Chain(url, slot, this, def, def.source);
 
         children.push(chain);
 
@@ -491,7 +479,7 @@ Cog.prototype.build = function build(){ // urls loaded
     this.buildActions();
     this.buildRelays();
 
-    // todo init/refresh states and wires here?
+    // todo possibly init/refresh states and wires here?
 
     this.script.init();
 

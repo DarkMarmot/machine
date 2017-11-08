@@ -33,6 +33,8 @@ function Chain(url, slot, parent, def, sourceName, keyField){
 
     this.buildConfig(def);
 
+    this.sourceName = this.sourceName || this.config.source;
+
     this.load();
 
 }
@@ -175,8 +177,14 @@ Chain.prototype.getNamedElement = function getNamedElement(name){
 
 Chain.prototype.build = function build(){ // urls loaded
 
-    const meow = this.sourceName + ' * buildCogsByIndex';
-    this.bus = this.scope.bus().context(this).meow(meow).pull();
+    const name = this.sourceName;
+    const data = this.parent.scope.find(name, true);
+
+    this.bus = this.scope.bus()
+        .addSubscribe(name, data)
+        .msg(this.buildCogsByIndex, this)
+        .pull();
+
 
 };
 

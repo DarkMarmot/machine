@@ -140,6 +140,15 @@ AliasContext.prototype.itemToUrl = function applyUrl(item) {
 
 AliasContext.prototype.resolveUrl = function resolveUrl(url, root){
 
+    const parts = url.trim().split(' ');
+
+    if(parts.length === 1){
+        url = parts[0];
+    } else {
+        root = parts[0];
+        url = parts[1];
+    }
+
     const cache = this.urlCache;
     root = root || this.sourceRoot || '';
     const baseCache = cache[root] = cache[root] || {};

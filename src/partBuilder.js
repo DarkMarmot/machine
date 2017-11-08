@@ -12,8 +12,11 @@ PartBuilder.buildConfig = function buildConfig(def){
         const d = this.scope.demand('config');
 
         if(typeof def === 'string'){
-            const meow = def + ' > config';
-            this.scope.bus().meow(meow).pull();
+
+            const source = this.parent.scope.find(def);
+            def = source.read();
+            d.write(def);
+
         } else {
             d.write(def);
         }
@@ -147,9 +150,11 @@ PartBuilder.buildRelays = function buildRelays(){
                 scope.bus().addSubscribe(actionName, localAction).write(remoteAction);
                 scope.bus().addSubscribe(remoteStateName, remoteState).write(localState).pull();
             } else if (remoteAction && !remoteState){
-                // assert relay has action sans state
+                // todo assert relay has action sans state
+                throw new Error('relay has action without state');
             } else if (remoteState && !remoteAction){
                 // assert relay has state sans action
+                throw new Error('relay has state without action');
             } else { // neither configured, wire locally
                 // warning -- relay disconnected
                 scope.bus().addSubscribe(actionName, localAction).write(localState);
