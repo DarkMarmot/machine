@@ -10,19 +10,41 @@ Machine.cog({
         '<div>' +
             'Welcome to the Machine' +
         '</div>' +
-        '<slot name="babbage"></slot>',
+        '<slot name="babbage"></slot>' +
+        '<div class="tabs is-toggle"><ul><slot name="menu"></slot></ul></div>' +
+        '<slot name="button"></slot>' +
+        '<slot name="t"></slot>',
+
 
     aliases: {
 
-        APP_ROOT: './app',
+        APP: './app',
         JS: './js',
-        LOVELACE: 'APP_ROOT lovelace.js',
-        D3: 'JS d3.min.js'
+        LOVELACE: 'APP lovelace.js',
+        D3: 'JS d3.min.js',
+        BULMA: 'APP bulma'
 
     },
 
     states: {
-        counter: 5
+        animal: '',
+        counter: 5,
+        _animals: function(){ return [
+                {label: 'cat', value: 'c'},
+                {label: 'dog', value: 'd'},
+                {label: 'bunny', value: 'b'}
+            ];},
+        _menuConfig: function(){ return {
+                renderer: 'BULMA anchor.js',
+                source: '_animals',
+                clickTo: '$animal',
+                activeFrom: 'animal'
+            }
+        }
+    },
+
+    wires: {
+        animal: 'bunny'
     },
 
     actions: {
@@ -33,12 +55,26 @@ Machine.cog({
         d3: 'D3'
     },
 
-    cogs: {
-        babbage: 'LOVELACE'
+    chains: {
+        menu: {
+            url: 'BULMA list_item.js',
+            renderer: 'BULMA anchor.js',
+            source: '_animals',
+            clickTo: '$animal',
+            activeFrom: 'animal'
+        }
     },
 
-    addOne: function(msg){
-        return msg + 1;
+    cogs: {
+        babbage: 'LOVELACE',
+        t: {
+            url: 'BULMA tabs.js',
+            config: '_menuConfig'
+        }
+        // button: {url: './lever/cogs/button.js', renderer: './textButtonRenderer.js', label: 'Bunny', value: 'b',
+        // clickTo: '$animal', activeFrom: 'animal'}
     }
+
+    // addOne: function(msg) { return msg + 1; }
 
 });

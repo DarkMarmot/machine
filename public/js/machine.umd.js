@@ -344,6 +344,15 @@ AliasContext.prototype.itemToUrl = function applyUrl(item) {
 
 AliasContext.prototype.resolveUrl = function resolveUrl(url, root){
 
+    const parts = url.trim().split(' ');
+
+    if(parts.length === 1){
+        url = parts[0];
+    } else {
+        root = parts[0];
+        url = parts[1];
+    }
+
     const cache = this.urlCache;
     root = root || this.sourceRoot || '';
     const baseCache = cache[root] = cache[root] || {};
@@ -419,8 +428,11 @@ PartBuilder.buildConfig = function buildConfig(def){
         const d = this.scope.demand('config');
 
         if(typeof def === 'string'){
-            const meow = def + ' > config';
-            this.scope.bus().meow(meow).pull();
+
+            const source = this.parent.scope.find(def);
+            def = source.read();
+            d.write(def);
+
         } else {
             d.write(def);
         }
@@ -554,9 +566,11 @@ PartBuilder.buildRelays = function buildRelays(){
                 scope.bus().addSubscribe(actionName, localAction).write(remoteAction);
                 scope.bus().addSubscribe(remoteStateName, remoteState).write(localState).pull();
             } else if (remoteAction && !remoteState){
-                // assert relay has action sans state
+                // todo assert relay has action sans state
+                throw new Error('relay has action without state');
             } else if (remoteState && !remoteAction){
                 // assert relay has state sans action
+                throw new Error('relay has state without action');
             } else { // neither configured, wire locally
                 // warning -- relay disconnected
                 scope.bus().addSubscribe(actionName, localAction).write(localState);
@@ -1929,7 +1943,7 @@ function runPhrase(bus, phrase){
             // todo transaction, no actions
         } else {
             const word = words[0];
-            const data = scope.find(word.name);
+            const data = scope.find(word.name, true);
             bus.write(data);
         }
     }
@@ -1982,7 +1996,7 @@ function watchWords(bus, words){
 function createWatcher(scope, word){
 
     const watcher = scope.bus();
-    const data = scope.find(word.name);
+    const data = scope.find(word.name, true);
 
     watcher.addSubscribe(word.alias, data);
 
@@ -2062,7 +2076,7 @@ function createEventBus(scope, target, word){
 
 function getThenReadOne(scope, word){
 
-    const state = scope.find(word.name);
+    const state = scope.find(word.name, true);
     const reader = {};
 
     reader.read = function read(){
@@ -3541,6 +3555,8 @@ function Chain(url, slot, parent, def, sourceName, keyField){
 
     this.buildConfig(def);
 
+    this.sourceName = this.sourceName || this.config.source;
+
     this.load();
 
 }
@@ -3683,8 +3699,14 @@ Chain.prototype.getNamedElement = function getNamedElement(name){
 
 Chain.prototype.build = function build(){ // urls loaded
 
-    const meow = this.sourceName + ' * buildCogsByIndex';
-    this.bus = this.scope.bus().context(this).meow(meow).pull();
+    const name = this.sourceName;
+    const data = this.parent.scope.find(name, true);
+
+    this.bus = this.scope.bus()
+        .addSubscribe(name, data)
+        .msg(this.buildCogsByIndex, this)
+        .pull();
+
 
 };
 
@@ -4238,18 +4260,6 @@ Cog.prototype.buildBuses = function buildBuses(){
 };
 
 
-//
-// Cog.prototype.buildBusFromNyan = function buildBusFromNyan(nyanStr, el){
-//     return this.scope.bus(nyanStr, this.script, el);
-// };
-//
-// Cog.prototype.buildBusFromFunction = function buildBusFromFunction(f, el){
-//
-//     //const bus = this.scope.bus()
-// };
-
-
-
 Cog.prototype.buildCogs = function buildCogs(){
 
     const cogs = this.script.cogs;
@@ -4340,7 +4350,7 @@ Cog.prototype.buildChains = function buildChains(){
         const slot = this.namedSlots[slotName];
 
         const url = aliasContext.resolveUrl(def.url, def.root);
-        const chain = new Chain(url, slot, this, def.config, def.source);
+        const chain = new Chain(url, slot, this, def, def.source);
 
         children.push(chain);
 
@@ -4432,7 +4442,7 @@ Cog.prototype.build = function build(){ // urls loaded
     this.buildActions();
     this.buildRelays();
 
-    // todo init/refresh states and wires here?
+    // todo possibly init/refresh states and wires here?
 
     this.script.init();
 
