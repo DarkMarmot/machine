@@ -1,15 +1,11 @@
 
 Machine.cog({
 
-    display: '<li name="item"><slot name="renderer"></slot></li>',
+    display: '<div class="control"><slot name="renderer"></slot></div>',
 
     relays: [
         {action: 'clickTo', state: 'activeFrom'}
     ],
-
-    events: {
-        item: '@ click * preventDefault | clickValue > $clickTo',
-    },
 
     buses: [
         'active * render'

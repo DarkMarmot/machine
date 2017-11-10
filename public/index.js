@@ -13,6 +13,9 @@ Machine.cog({
         '<slot name="babbage"></slot>' +
         '<div class="tabs is-toggle"><ul><slot name="menu"></slot></ul></div>' +
         '<slot name="button"></slot>' +
+        '<slot name="progress"></slot>' +
+        '<slot name="anchor"></slot>' +
+        '<slot name="icon_label"></slot>' +
         '<slot name="t"></slot>',
 
 
@@ -27,29 +30,38 @@ Machine.cog({
     },
 
     states: {
+        others: function(){ return [
+            {label: 'frog', value: 'x', icon: 'fa fa-home'},
+            {label: 'salamander', value: 'y', icon: 'fa fa-cog'},
+            {label: 'toad', value: 'b', icon: 'fa fa-space-shuttle'}
+        ];},
         animal: '',
-        counter: 5,
+        _animalPct: .74,
         _animals: function(){ return [
-                {label: 'cat', value: 'c'},
-                {label: 'dog', value: 'd'},
-                {label: 'bunny', value: 'b'}
+                {label: 'cat', value: 'c', icon: 'fa fa-home'},
+                {label: 'dog', value: 'd', icon: 'fa fa-cog'},
+                {label: 'bunny', value: 'b', icon: 'fa fa-space-shuttle'}
             ];},
+
         _menuConfig: function(){ return {
-                renderer: 'BULMA anchor.js',
+
+                item_renderer: 'BULMA icon_label.js',
                 source: '_animals',
                 clickTo: '$animal',
-                activeFrom: 'animal'
+                activeFrom: 'animal',
+                classes: '', //'is-right is-toggle is-boxed is-large',
+
             }
         }
     },
 
+    buses: [
+      'others > _animals'
+    ],
     wires: {
         animal: 'bunny'
     },
 
-    actions: {
-        incCounter: '| counter * addOne > counter'
-    },
 
     libs: {
         d3: 'D3'
@@ -58,7 +70,7 @@ Machine.cog({
     chains: {
         menu: {
             url: 'BULMA list_item.js',
-            renderer: 'BULMA anchor.js',
+            item_renderer: 'BULMA anchor.js',
             source: '_animals',
             clickTo: '$animal',
             activeFrom: 'animal'
@@ -68,8 +80,21 @@ Machine.cog({
     cogs: {
         babbage: 'LOVELACE',
         t: {
-            url: 'BULMA tabs.js',
+            url: 'BULMA breadcrumb.js',
             config: '_menuConfig'
+        },
+        progress: {
+            url: 'BULMA progress.js',
+            valueFrom: '_animalPct'
+        },
+        anchor: {
+            url: 'BULMA anchor.js',
+            label: 'Kitten Rage!'
+        },
+        icon_label: {
+            url: 'BULMA icon_label.js',
+            icon: 'fa fa-dashboard',
+            label: 'Go Go Bunny Rangers!'
         }
         // button: {url: './lever/cogs/button.js', renderer: './textButtonRenderer.js', label: 'Bunny', value: 'b',
         // clickTo: '$animal', activeFrom: 'animal'}

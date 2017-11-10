@@ -11,6 +11,7 @@ let _id = 0;
 
 function Chain(url, slot, parent, def, sourceName, keyField){
 
+    this.type = 'chain';
     this.id = ++_id;
     this.head = null;
     this.placeholder = slot;

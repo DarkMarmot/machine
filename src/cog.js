@@ -51,6 +51,12 @@ function Cog(url, slot, parent, def, index, key){
 
     this.buildConfig(def);
 
+    // forward gear sources here
+    if(this.parent && this.parent.type === 'gear'){
+        this.scope.bus()
+            .addSubscribe('source', this.parent.source)
+            .write(this.source).pull();
+    }
 
     this.load();
 

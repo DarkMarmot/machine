@@ -13,20 +13,10 @@ Machine.cog({
 
         '</div>',
 
-    events: {
-        ada: '@click > $incCounter'
-    },
-
-    buses: [
-        '~ counter * renderCounter'
-    ],
 
     libs: {
         d3: 'D3'
-    },
-
-    renderCounter: function(msg){
-        this.dom.counter.text(msg);
     }
+
 
 });

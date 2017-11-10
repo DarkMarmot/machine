@@ -3428,6 +3428,7 @@ let _id$1 = 0;
 
 function Gear(url, slot, parent, def){
 
+    this.type = 'gear';
     this.id = ++_id$1;
     this.placeholder = slot;
     this.head = null;
@@ -3438,10 +3439,14 @@ function Gear(url, slot, parent, def){
     this.scope = parent.scope.createChild();
     this.root = parent.root;
     this.config = null; //(def && def.config) || def || {};
+
     this.aliasContext = parent.aliasContext;
 
 
     this.buildConfig(def);
+    this.sourceName = this.config.source;
+    this.buildSource();
+
     // todo add err url must be data pt! not real url (no dots in dp)
 
     const meow = url + ' * createCog';
@@ -3451,7 +3456,21 @@ function Gear(url, slot, parent, def){
 
 Gear.prototype.buildConfig = PartBuilder.buildConfig;
 
+Gear.prototype.buildSource = function(){
 
+    const name = this.sourceName;
+
+    if(!name)
+        return;
+
+    const localSource = this.source = this.scope.demand('source');
+    const remoteSource = this.parent.scope.find(name, true);
+
+    this.scope.bus()
+        .addSubscribe(name, remoteSource)
+        .write(localSource);
+
+};
 
 Gear.prototype.killPlaceholder = function() {
 
@@ -3533,6 +3552,7 @@ let _id$2 = 0;
 
 function Chain(url, slot, parent, def, sourceName, keyField){
 
+    this.type = 'chain';
     this.id = ++_id$2;
     this.head = null;
     this.placeholder = slot;
@@ -3896,6 +3916,10 @@ AlterDom.prototype.text = function text(text) {
 
 };
 
+AlterDom.prototype.setClasses = function(classes){
+    this._el.className = classes; // todo more than string
+};
+
 AlterDom.prototype.toggleClasses = function(changes){
 
     const toHash = function(acc, v){ acc[v] = true; return acc;};
@@ -3935,7 +3959,7 @@ AlterDom.prototype.addClass = function(name){
 };
 
 AlterDom.prototype.attr = function(name, value) {
-    if(typeof value !== 'string') {
+    if(value === undefined || value === null) {
         this._el.removeAttribute(name);
     } else {
         this._el.setAttribute(name, value);
@@ -4014,6 +4038,12 @@ function Cog(url, slot, parent, def, index, key){
 
     this.buildConfig(def);
 
+    // forward gear sources here
+    if(this.parent && this.parent.type === 'gear'){
+        this.scope.bus()
+            .addSubscribe('source', this.parent.source)
+            .write(this.source).pull();
+    }
 
     this.load();
 

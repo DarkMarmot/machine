@@ -75,6 +75,10 @@ AlterDom.prototype.text = function text(text) {
 
 };
 
+AlterDom.prototype.setClasses = function(classes){
+    this._el.className = classes; // todo more than string
+};
+
 AlterDom.prototype.toggleClasses = function(changes){
 
     const toHash = function(acc, v){ acc[v] = true; return acc;};
@@ -114,7 +118,7 @@ AlterDom.prototype.addClass = function(name){
 };
 
 AlterDom.prototype.attr = function(name, value) {
-    if(typeof value !== 'string') {
+    if(value === undefined || value === null) {
         this._el.removeAttribute(name);
     } else {
         this._el.setAttribute(name, value);

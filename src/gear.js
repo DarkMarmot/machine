@@ -8,6 +8,7 @@ let _id = 0;
 
 function Gear(url, slot, parent, def){
 
+    this.type = 'gear';
     this.id = ++_id;
     this.placeholder = slot;
     this.head = null;
@@ -18,10 +19,14 @@ function Gear(url, slot, parent, def){
     this.scope = parent.scope.createChild();
     this.root = parent.root;
     this.config = null; //(def && def.config) || def || {};
+
     this.aliasContext = parent.aliasContext;
 
 
     this.buildConfig(def);
+    this.sourceName = this.config.source;
+    this.buildSource();
+
     // todo add err url must be data pt! not real url (no dots in dp)
 
     const meow = url + ' * createCog';
@@ -31,7 +36,21 @@ function Gear(url, slot, parent, def){
 
 Gear.prototype.buildConfig = PartBuilder.buildConfig;
 
+Gear.prototype.buildSource = function(){
 
+    const name = this.sourceName;
+
+    if(!name)
+        return;
+
+    const localSource = this.source = this.scope.demand('source');
+    const remoteSource = this.parent.scope.find(name, true);
+
+    this.scope.bus()
+        .addSubscribe(name, remoteSource)
+        .write(localSource);
+
+};
 
 Gear.prototype.killPlaceholder = function() {
 

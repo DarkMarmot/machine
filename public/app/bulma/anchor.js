@@ -4,11 +4,14 @@ Machine.cog({
     display: '<a name="anchor"></a>',
 
     buses: [
-        'settings * render'
+        '{ source, config | source, config * render'
     ],
 
-    render: function(settings){
+    render: function(msg){
+
+        const settings = msg.source || msg.config || {};
         this.dom.anchor.text(settings.label);
+
     }
 
 });
