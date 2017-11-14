@@ -7,21 +7,38 @@ PartBuilder.buildConfig = function buildConfig(def){
     if(!def && !this.parent) // empty root config
         def = {};
 
+    let baseConfig = {};
+
     if(def){
-        def = def.config || def;
-        const d = this.scope.demand('config');
 
-        if(typeof def === 'string'){
+        const defConfig = def.config;
+        if(defConfig){
 
-            const source = this.parent.scope.find(def);
-            def = source.read();
-            d.write(def);
+            let inheritConfig;
 
-        } else {
-            d.write(def);
+            if(typeof defConfig === 'string'){
+                inheritConfig = this.parent.scope.find(defConfig).read();
+            } else if (typeof defConfig === 'object'){
+                inheritConfig = defConfig;
+            }
+
+            for(const name in inheritConfig){
+                baseConfig[name] = inheritConfig[name];
+            }
+
         }
-        this.config = def;
+
+        for(const name in def){
+            if(name !== 'config')
+                baseConfig[name] = def[name];
+        }
+
+        this.scope.demand('config').write(baseConfig);
+
     }
+
+    this.config = this.scope.find('config').read();
+
 };
 
 
@@ -107,7 +124,7 @@ PartBuilder.buildWires = function buildWires(){
 PartBuilder.buildRelays = function buildRelays(){
 
     const scope = this.scope;
-    const config = this.config;
+    const config = this.config || this.scope.find('config').read();
     const relays = this.script.relays;
     const len = relays.length;
 

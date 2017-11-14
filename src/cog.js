@@ -13,7 +13,7 @@ import Placeholder from './placeholder.js';
 
 let _id = 0;
 
-function Cog(url, slot, parent, def, index, key){
+function Cog(url, slot, parent, def, data, key){
 
     this.id = ++_id;
     this.type = 'cog';
@@ -35,9 +35,9 @@ function Cog(url, slot, parent, def, index, key){
     this.root = '';
     this.script = null;
     this.config = null; //(def && def.config) || def || {}; // todo inherit parent config if in chain?
-    this.source = this.scope.demand('source');
+    this.source = null; //this.scope.demand('source');
 
-    this.index = index;
+    //this.index = index;
     this.key = key;
     this.scriptMonitor = null;
     this.aliasValveMap = null;
@@ -51,12 +51,17 @@ function Cog(url, slot, parent, def, index, key){
 
     this.buildConfig(def);
 
-    // forward gear sources here
-    if(this.parent && this.parent.type === 'gear'){
-        this.scope.bus()
-            .addSubscribe('source', this.parent.source)
-            .write(this.source).pull();
+    if(this.parent && this.parent.type === 'chain') {
+        this.source = this.scope.demand('source');
+        this.source.write(data);
     }
+
+    // // forward gear sources here
+    // if(this.parent && this.parent.type === 'gear'){
+    //     this.scope.bus()
+    //         .addSubscribe('source', this.parent.source)
+    //         .write(this.source).pull();
+    // }
 
     this.load();
 
@@ -317,7 +322,7 @@ Cog.prototype.buildCogs = function buildCogs(){
     for(const slotName in cogs){
 
         const def = cogs[slotName];
-        AliasContext.applySplitUrl(def);
+        //AliasContext.applySplitUrl(def);
 
         const slot = this.namedSlots[slotName];
         let cog;
@@ -388,7 +393,7 @@ Cog.prototype.buildChains = function buildChains(){
     for(const slotName in chains){
 
         const def = chains[slotName];
-        AliasContext.applySplitUrl(def);
+        //AliasContext.applySplitUrl(def);
 
         const slot = this.namedSlots[slotName];
 
@@ -482,8 +487,9 @@ Cog.prototype.build = function build(){ // urls loaded
 
     this.buildStates();
     this.buildWires();
-    this.buildActions();
     this.buildRelays();
+    this.buildActions();
+
 
     // todo possibly init/refresh states and wires here?
 

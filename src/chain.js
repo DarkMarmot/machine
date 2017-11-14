@@ -229,9 +229,10 @@ Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
             } else {
                 el.appendChild(slot);
             }
-            const cog = new Cog(this.url, slot, this, this.config, i);
             const d = msg[i];
-            cog.source.write(d);
+            const cog = new Cog(this.url, slot, this, this.config, d, i);
+
+
             children.push(cog);
 
         }

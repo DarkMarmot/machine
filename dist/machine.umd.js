@@ -423,21 +423,38 @@ PartBuilder.buildConfig = function buildConfig(def){
     if(!def && !this.parent) // empty root config
         def = {};
 
+    let baseConfig = {};
+
     if(def){
-        def = def.config || def;
-        const d = this.scope.demand('config');
 
-        if(typeof def === 'string'){
+        const defConfig = def.config;
+        if(defConfig){
 
-            const source = this.parent.scope.find(def);
-            def = source.read();
-            d.write(def);
+            let inheritConfig;
 
-        } else {
-            d.write(def);
+            if(typeof defConfig === 'string'){
+                inheritConfig = this.parent.scope.find(defConfig).read();
+            } else if (typeof defConfig === 'object'){
+                inheritConfig = defConfig;
+            }
+
+            for(const name in inheritConfig){
+                baseConfig[name] = inheritConfig[name];
+            }
+
         }
-        this.config = def;
+
+        for(const name in def){
+            if(name !== 'config')
+                baseConfig[name] = def[name];
+        }
+
+        this.scope.demand('config').write(baseConfig);
+
     }
+
+    this.config = this.scope.find('config').read();
+
 };
 
 
@@ -523,7 +540,7 @@ PartBuilder.buildWires = function buildWires(){
 PartBuilder.buildRelays = function buildRelays(){
 
     const scope = this.scope;
-    const config = this.config;
+    const config = this.config || this.scope.find('config').read();
     const relays = this.script.relays;
     const len = relays.length;
 
@@ -3444,8 +3461,8 @@ function Gear(url, slot, parent, def){
 
 
     this.buildConfig(def);
-    this.sourceName = this.config.source;
-    this.buildSource();
+    // this.sourceName = this.config.source;
+    // this.buildSource();
 
     // todo add err url must be data pt! not real url (no dots in dp)
 
@@ -3456,21 +3473,21 @@ function Gear(url, slot, parent, def){
 
 Gear.prototype.buildConfig = PartBuilder.buildConfig;
 
-Gear.prototype.buildSource = function(){
-
-    const name = this.sourceName;
-
-    if(!name)
-        return;
-
-    const localSource = this.source = this.scope.demand('source');
-    const remoteSource = this.parent.scope.find(name, true);
-
-    this.scope.bus()
-        .addSubscribe(name, remoteSource)
-        .write(localSource);
-
-};
+// Gear.prototype.buildSource = function(){
+//
+//     const name = this.sourceName;
+//
+//     if(!name)
+//         return;
+//
+//     const localSource = this.source = this.scope.demand('source');
+//     const remoteSource = this.parent.scope.find(name, true);
+//
+//     this.scope.bus()
+//         .addSubscribe(name, remoteSource)
+//         .write(localSource);
+//
+// };
 
 Gear.prototype.killPlaceholder = function() {
 
@@ -3770,9 +3787,10 @@ Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
             } else {
                 el.appendChild(slot);
             }
-            const cog = new Cog(this.url, slot, this, this.config, i);
             const d = msg[i];
-            cog.source.write(d);
+            const cog = new Cog(this.url, slot, this, this.config, d, i);
+
+
             children.push(cog);
 
         }
@@ -4000,7 +4018,7 @@ AlterDom.prototype.styles = function(changes) {
 
 let _id = 0;
 
-function Cog(url, slot, parent, def, index, key){
+function Cog(url, slot, parent, def, data, key){
 
     this.id = ++_id;
     this.type = 'cog';
@@ -4022,9 +4040,9 @@ function Cog(url, slot, parent, def, index, key){
     this.root = '';
     this.script = null;
     this.config = null; //(def && def.config) || def || {}; // todo inherit parent config if in chain?
-    this.source = this.scope.demand('source');
+    this.source = null; //this.scope.demand('source');
 
-    this.index = index;
+    //this.index = index;
     this.key = key;
     this.scriptMonitor = null;
     this.aliasValveMap = null;
@@ -4038,12 +4056,17 @@ function Cog(url, slot, parent, def, index, key){
 
     this.buildConfig(def);
 
-    // forward gear sources here
-    if(this.parent && this.parent.type === 'gear'){
-        this.scope.bus()
-            .addSubscribe('source', this.parent.source)
-            .write(this.source).pull();
+    if(this.parent && this.parent.type === 'chain') {
+        this.source = this.scope.demand('source');
+        this.source.write(data);
     }
+
+    // // forward gear sources here
+    // if(this.parent && this.parent.type === 'gear'){
+    //     this.scope.bus()
+    //         .addSubscribe('source', this.parent.source)
+    //         .write(this.source).pull();
+    // }
 
     this.load();
 
@@ -4304,7 +4327,7 @@ Cog.prototype.buildCogs = function buildCogs(){
     for(const slotName in cogs){
 
         const def = cogs[slotName];
-        AliasContext.applySplitUrl(def);
+        //AliasContext.applySplitUrl(def);
 
         const slot = this.namedSlots[slotName];
         let cog;
@@ -4375,7 +4398,7 @@ Cog.prototype.buildChains = function buildChains(){
     for(const slotName in chains){
 
         const def = chains[slotName];
-        AliasContext.applySplitUrl(def);
+        //AliasContext.applySplitUrl(def);
 
         const slot = this.namedSlots[slotName];
 
@@ -4469,8 +4492,9 @@ Cog.prototype.build = function build(){ // urls loaded
 
     this.buildStates();
     this.buildWires();
-    this.buildActions();
     this.buildRelays();
+    this.buildActions();
+
 
     // todo possibly init/refresh states and wires here?
 
@@ -4577,7 +4601,9 @@ Machine.lib = define;
 Machine.init = function init(slot, url){
 
     url = PathResolver.resolveUrl(null, url);
-    return new Cog(url, slot);
+    const root = new Cog(url, slot);
+    root.scope.demand('source');
+    return root;
 
 };
 

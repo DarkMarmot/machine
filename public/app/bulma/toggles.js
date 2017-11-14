@@ -1,19 +1,18 @@
 
-Machine.cog({
+Machine.trait({
 
-    mount: function(){
-        const s = this.cog.scope;
-      console.log('s', s.find('source'));
-    },
-    display: '<li name="item"><slot name="renderer"></slot></li>',
+    // selectable
+    // clickable
 
 
     relays: [
-        {action: 'clickTo', state: 'activeFrom'}
+        {state: 'settings'},
+        {action: 'clickTo', state: 'activeFrom'},
+        {target: 'clickElement'}
     ],
 
     events: {
-        item: '@ click * preventDefault | clickValue > $clickTo',
+        clickElement: '@ click * preventDefault | clickValue > $clickTo',
     },
 
     buses: [

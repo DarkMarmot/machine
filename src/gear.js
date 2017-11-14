@@ -24,8 +24,8 @@ function Gear(url, slot, parent, def){
 
 
     this.buildConfig(def);
-    this.sourceName = this.config.source;
-    this.buildSource();
+    // this.sourceName = this.config.source;
+    // this.buildSource();
 
     // todo add err url must be data pt! not real url (no dots in dp)
 
@@ -36,21 +36,21 @@ function Gear(url, slot, parent, def){
 
 Gear.prototype.buildConfig = PartBuilder.buildConfig;
 
-Gear.prototype.buildSource = function(){
-
-    const name = this.sourceName;
-
-    if(!name)
-        return;
-
-    const localSource = this.source = this.scope.demand('source');
-    const remoteSource = this.parent.scope.find(name, true);
-
-    this.scope.bus()
-        .addSubscribe(name, remoteSource)
-        .write(localSource);
-
-};
+// Gear.prototype.buildSource = function(){
+//
+//     const name = this.sourceName;
+//
+//     if(!name)
+//         return;
+//
+//     const localSource = this.source = this.scope.demand('source');
+//     const remoteSource = this.parent.scope.find(name, true);
+//
+//     this.scope.bus()
+//         .addSubscribe(name, remoteSource)
+//         .write(localSource);
+//
+// };
 
 Gear.prototype.killPlaceholder = function() {
 

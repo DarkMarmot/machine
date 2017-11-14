@@ -24,7 +24,9 @@ Machine.lib = define;
 Machine.init = function init(slot, url){
 
     url = PathResolver.resolveUrl(null, url);
-    return new Cog(url, slot);
+    const root = new Cog(url, slot);
+    root.scope.demand('source');
+    return root;
 
 };
 

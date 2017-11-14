@@ -16,6 +16,7 @@ Machine.cog({
         '<slot name="progress"></slot>' +
         '<slot name="anchor"></slot>' +
         '<slot name="icon_label"></slot>' +
+        '<slot name="selectable"></slot>' +
         '<slot name="t"></slot>',
 
 
@@ -52,6 +53,17 @@ Machine.cog({
                 classes: '', //'is-right is-toggle is-boxed is-large',
 
             }
+        },
+
+        _sConfig: function(){ return {
+
+            renderer: 'BULMA renderers/icon_label.js',
+            source: '_animals',
+            clickTo: '$animal',
+            activeFrom: 'animal',
+            classes: 'is-right is-toggle is-boxed is-large',
+
+        }
         }
     },
 
@@ -67,21 +79,25 @@ Machine.cog({
         d3: 'D3'
     },
 
-    chains: {
-        menu: {
-            url: 'BULMA list_item.js',
-            item_renderer: 'BULMA anchor.js',
-            source: '_animals',
-            clickTo: '$animal',
-            activeFrom: 'animal'
-        }
-    },
+    // chains: {
+    //     menu: {
+    //         url: 'BULMA list_item.js',
+    //         item_renderer: 'BULMA anchor.js',
+    //         source: '_animals',
+    //         clickTo: '$animal',
+    //         activeFrom: 'animal'
+    //     }
+    // },
 
     cogs: {
         babbage: 'LOVELACE',
-        t: {
-            url: 'BULMA breadcrumb.js',
-            config: '_menuConfig'
+        // t: {
+        //     url: 'BULMA breadcrumb.js',
+        //     config: '_menuConfig'
+        // },
+        selectable: {
+            url: 'BULMA tabs2.js',
+            config: '_sConfig'
         },
         progress: {
             url: 'BULMA progress.js',

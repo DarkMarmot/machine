@@ -4,8 +4,13 @@ Machine.cog({
     display: '<a><span class="icon"><i name="icon"></i></span><span name="label"></span></a>',
 
     buses: [
-        '{ source, config | source, config * render'
+        '{ source, config * log | source, config * render'
     ],
+
+    log: function(){
+      const s = this.cog.scope;
+      console.log('and',s.find('source'));
+    },
 
     render: function(msg){
 
