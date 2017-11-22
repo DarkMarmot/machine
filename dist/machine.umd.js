@@ -521,6 +521,7 @@ PartBuilder.extendConfigAndSourceToProps = function(msg){
     const config = msg.config;
     const result = {};
 
+    // const parentIsChain = this.parent && this.parent.type === 'chain';
     for(const k in config){
         if(k !== 'source'){
             result[k] = config[k];

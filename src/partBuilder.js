@@ -10,7 +10,7 @@ PartBuilder.defineProps = function(def, data){
     this.source = scope.demand('__source');
     if(data)
         this.source.write(data);
-    this.props = scope.demand('props')
+    this.props = scope.demand('props');
 
     const defConfig = def.config;
 
@@ -27,7 +27,6 @@ PartBuilder.defineProps = function(def, data){
         const mergedConfigData = this.extendDefToConfig(rawConfigData);
         localConfigData.write(mergedConfigData);
     }
-
 
     scope.bus().context(this)
         .meow('~ config, __source * extendConfigAndSourceToProps > props')
@@ -105,6 +104,7 @@ PartBuilder.extendConfigAndSourceToProps = function(msg){
     const config = msg.config;
     const result = {};
 
+    // const parentIsChain = this.parent && this.parent.type === 'chain';
     for(const k in config){
         if(k !== 'source'){
             result[k] = config[k];

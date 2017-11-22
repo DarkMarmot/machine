@@ -38,7 +38,7 @@ Machine.cog({
         ];},
         animal: '',
         _animalPct: .74,
-        animals: function(){ return [
+        _animals: function(){ return [
                 {label: 'cat', value: 'c', icon: 'fa fa-home'},
                 {label: 'dog', value: 'd', icon: 'fa fa-cog'},
                 {label: 'bunny', value: 'b', icon: 'fa fa-space-shuttle'}
@@ -46,8 +46,8 @@ Machine.cog({
 
         _menuConfig: function(){ return {
 
-                item_renderer: 'BULMA icon_label.js',
-                source: 'animals',
+                renderer: 'BULMA renderers/icon_label.js',
+                items: '_animals',
                 clickTo: '$animal',
                 activeFrom: 'animal',
                 classes: '', //'is-right is-toggle is-boxed is-large',
@@ -57,18 +57,25 @@ Machine.cog({
 
         _sConfig: function(){ return {
 
-            renderer: 'BULMA renderers/icon_label.js',
-            items: 'animals',
-            clickTo: '$animal',
-            activeFrom: 'animal',
-            classes: 'is-right is-toggle is-boxed is-large',
+                renderer: 'BULMA renderers/icon_label.js',
+                items: '_animals',
+                clickTo: '$animal',
+                activeFrom: 'animal',
+                classes: 'is-right is-toggle is-boxed is-large',
 
-        }
+            }
+        },
+
+        meowing: function(){
+            return {
+                label: 'meowowowo',
+                icon: 'fa fa-edit'
+            };
         }
     },
 
     buses: [
-      'others > animals'
+      'others > _animals'
     ],
     wires: {
         animal: 'bunny'
@@ -91,14 +98,21 @@ Machine.cog({
 
     cogs: {
         babbage: 'LOVELACE',
-        // t: {
-        //     url: 'BULMA breadcrumb.js',
-        //     config: '_menuConfig'
-        // },
+
+        t: {
+            url: 'BULMA tabs2.js',
+            config: '_menuConfig'
+        },
+
         selectable: {
             url: 'BULMA tabs2.js',
-            config: '_sConfig'
+            renderer: 'BULMA renderers/icon_label.js',
+            items: '_animals',
+            clickTo: '$animal',
+            activeFrom: 'animal',
+            classes: 'is-right is-toggle is-boxed is-large'
         },
+
         progress: {
             url: 'BULMA progress.js',
             valueFrom: '_animalPct'
@@ -109,8 +123,9 @@ Machine.cog({
         },
         icon_label: {
             url: 'BULMA icon_label.js',
-            icon: 'fa fa-dashboard',
-            label: 'Go Go Bunny Rangers!'
+            config: 'meowing'
+            // icon: 'fa fa-dashboard',
+            // label: 'Go Go Bunny Rangers!'
         }
         // button: {url: './lever/cogs/button.js', renderer: './textButtonRenderer.js', label: 'Bunny', value: 'b',
         // clickTo: '$animal', activeFrom: 'animal'}

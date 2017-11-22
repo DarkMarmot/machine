@@ -18,14 +18,13 @@ Machine.cog({
     },
 
     buses: [
-        '{ source, config, active | source, config, active * render'
+        'props.icon, props.label, active * render'
     ],
 
     render: function(msg){
 
-        const settings = msg.source || msg.config || {};
-        this.dom.label.text(settings.label);
-        this.dom.icon.setClasses(settings.icon || '');
+        this.dom.label.text(msg.label);
+        this.dom.icon.setClasses(msg.icon || '');
         this.dom.item.toggleClasses({
             'is-active': msg.active
         });
