@@ -2,6 +2,125 @@
 const PartBuilder = {};
 
 
+PartBuilder.defineProps = function(def, data){
+
+    const scope = this.scope;
+
+    const localConfigData = this.config = scope.demand('config');
+    this.source = scope.demand('__source');
+    if(data)
+        this.source.write(data);
+    this.props = scope.demand('props')
+
+    const defConfig = def.config;
+
+    if(typeof defConfig === 'string'){ // subscribe to named config, overriding def
+        const namedConfigData = this.parent.scope.find(defConfig, true);
+        scope.bus()
+            .context(this)
+            .addSubscribe('config', namedConfigData)
+            .msg(this.extendDefToConfig)
+            .write(localConfigData).pull();
+    } else {
+        const rawConfigData = (typeof defConfig === 'function')
+            ? defConfig.call(null) : defConfig;
+        const mergedConfigData = this.extendDefToConfig(rawConfigData);
+        localConfigData.write(mergedConfigData);
+    }
+
+
+    scope.bus().context(this)
+        .meow('~ config, __source * extendConfigAndSourceToProps > props')
+        .pull();
+
+};
+
+PartBuilder.subscribeToParentSource = function(config){
+
+    if(this.parentSourceBus)
+        this.parentSourceBus.destroy();
+
+    const localSourceData = this.source;
+
+    if(!config.source){ // no source defined
+        localSourceData.write(undefined);
+        return;
+    }
+
+    if(typeof config.source === 'function'){
+        const f = config.source;
+        localSourceData.write(f.call(this.script));
+        return;
+    }
+
+    if(typeof config.source === 'string'){
+
+        const parentSourceName = config.source;
+        const parentSourceData = this.parent.scope.find(parentSourceName, true);
+
+        this.parentSourceBus = this.scope.bus().context(this)
+            .addSubscribe(parentSourceName, parentSourceData)
+            .write(localSourceData)
+            .pull();
+
+        return;
+
+    }
+
+
+    throw new Error('invalid source -- must be string or function');
+
+};
+
+const urlOrConfigHash = {url: true, config: true};
+
+
+
+// override def sans url and config with config hash
+PartBuilder.extendDefToConfig = function(config){
+
+    const def = this.def;
+    const result = {};
+
+    for(const k in def){
+        if(!urlOrConfigHash.hasOwnProperty(k)){
+            result[k] = def[k];
+        }
+    }
+
+    for(const k in config){
+        result[k] = config[k];
+    }
+
+    return result;
+
+};
+
+
+
+// override config sans source and config with config hash
+PartBuilder.extendConfigAndSourceToProps = function(msg){
+
+    const source = msg.__source;
+    const config = msg.config;
+    const result = {};
+
+    for(const k in config){
+        if(k !== 'source'){
+            result[k] = config[k];
+        }
+    }
+
+    if(source && typeof source === 'object') {
+        for (const k in source) {
+            result[k] = source[k];
+        }
+    }
+
+    return result;
+
+};
+
 PartBuilder.buildConfig = function buildConfig(def){
 
     if(!def && !this.parent) // empty root config
@@ -124,7 +243,6 @@ PartBuilder.buildWires = function buildWires(){
 PartBuilder.buildRelays = function buildRelays(){
 
     const scope = this.scope;
-    const config = this.config || this.scope.find('config').read();
     const relays = this.script.relays;
     const len = relays.length;
 
@@ -132,8 +250,8 @@ PartBuilder.buildRelays = function buildRelays(){
 
         const def = relays[i];
 
-        const actionProp = def.action || def.wire;
-        const stateProp = def.state || def.wire;
+        const actionProp = def.action;
+        const stateProp = def.state;
 
         let actionName = null;
         let stateName = null;
@@ -144,9 +262,44 @@ PartBuilder.buildRelays = function buildRelays(){
         if(stateProp)
             stateName = (stateProp[0] === '$') ? stateProp.substr(1) : stateProp;
 
-        // todo -- make $ prefix correct on these too, put in separate function
-        const remoteActionName = actionProp && config[actionProp];
-        const remoteStateName = stateProp && config[stateProp];
+        if(actionName)
+            scope.demand(actionName);
+
+        if(stateName)
+            scope.demand(stateName);
+
+    }
+
+    this.scope.bus().context(this).meow('props * connectRelays').pull();
+
+};
+
+PartBuilder.connectRelays = function connectRelays(props){
+
+    const scope = this.scope;
+    const relays = this.script.relays;
+    const len = relays.length;
+
+    // need to track and destroy on change
+
+    for(let i = 0; i < len; ++i){
+
+        const def = relays[i];
+
+        const actionProp = def.action;
+        const stateProp = def.state;
+
+        let actionName = null;
+        let stateName = null;
+
+        if(actionProp)
+            actionName = (actionProp[0] !== '$') ? '$' + actionProp : actionProp;
+
+        if(stateProp)
+            stateName = (stateProp[0] === '$') ? stateProp.substr(1) : stateProp;
+
+        const remoteActionName = actionProp && props[actionProp];
+        const remoteStateName = stateProp && props[stateProp];
 
         let remoteAction = remoteActionName ? scope._parent.find(remoteActionName, true) : null;
         let remoteState = remoteStateName ? scope._parent.find(remoteStateName, true) : null;

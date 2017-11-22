@@ -24,11 +24,14 @@ Machine.lib = define;
 Machine.init = function init(slot, url){
 
     url = PathResolver.resolveUrl(null, url);
-    const root = new Cog(url, slot);
+    const root = new Cog(url, slot, null, {});
     root.scope.demand('source');
     return root;
 
 };
+
+
+
 
 const defaultMethods = ['prep','init','mount','start','unmount','destroy'];
 const defaultArrays = ['traits',  'buses', 'books', 'relays'];

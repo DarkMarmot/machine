@@ -4,23 +4,26 @@ Machine.cog({
     display: '<div name="tabs"><ul><slot name="list_items"></ul></slot></div>',
 
     relays: [
-        {state: 'source'}
+        {state: 'items'}
+    ],
+
+    buses: [
+        'props * render'
     ],
 
     chains: {
 
         list_items: {
             url: 'BULMA selectable.js',
-            config: 'config', // inherit this config
-            source: 'source' // use the relayed source for privately declared data sources
+            config: 'props', // inherit this parent props
+            source: 'items' // use the relayed source for privately declared data sources
         }
 
     },
 
-    mount: function(){
+    render: function(props){
 
-        const config = this.config;
-        const classes = 'tabs ' + (config.classes || '');
+        const classes = 'tabs ' + (props.classes || '');
         this.dom.tabs.setClasses(classes);
 
     }

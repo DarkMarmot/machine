@@ -11,6 +11,8 @@ let _id = 0;
 
 function Chain(url, slot, parent, def, sourceName, keyField){
 
+    def = def || {};
+
     this.type = 'chain';
     this.id = ++_id;
     this.head = null;
@@ -31,16 +33,28 @@ function Chain(url, slot, parent, def, sourceName, keyField){
     this.sourceName = sourceName;
     this.keyField = keyField;
     this.bus = null;
+    this.def = def;
 
-    this.buildConfig(def);
+    this.defineProps(def);
 
-    this.sourceName = this.sourceName || this.config.source;
+    // subscribe source name to get source
+    this.scope.bus()
+        .context(this)
+        .addSubscribe('config', this.config)
+        .msg(this.subscribeToParentSource).pull(); // forwards to localSourceData
+
 
     this.load();
 
 }
 
-Chain.prototype.buildConfig = PartBuilder.buildConfig;
+
+
+Chain.prototype.defineProps = PartBuilder.defineProps;
+Chain.prototype.subscribeToParentSource = PartBuilder.subscribeToParentSource;
+Chain.prototype.extendDefToConfig = PartBuilder.extendDefToConfig;
+Chain.prototype.extendConfigAndSourceToProps = PartBuilder.extendConfigAndSourceToProps;
+Chain.prototype.defineProps = PartBuilder.defineProps;
 
 
 
@@ -178,28 +192,30 @@ Chain.prototype.getNamedElement = function getNamedElement(name){
 
 Chain.prototype.build = function build(){ // urls loaded
 
-    const name = this.sourceName;
-    const data = this.parent.scope.find(name, true);
+    // const name = this.sourceName;
+    // const data = this.parent.scope.find(name, true);
 
-    this.bus = this.scope.bus()
-        .addSubscribe(name, data)
-        .msg(this.buildCogsByIndex, this)
-        .pull();
-
+    this.scope.bus().context(this).meow('__source, config * buildCogsByIndex').pull();
+        // .addSubscribe(name, data)
+        // .msg(this.buildCogsByIndex, this)
+        // .pull();
 
 };
 
 
 Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
 
-    const len = msg.length;
+    const listData = msg.__source || [];
+    const defData = msg.config;
+
+    const len = listData.length;
     const children = this.children;
     const childCount = children.length;
     const updateCount = len > childCount ? childCount : len;
 
     // update existing
     for(let i = 0; i < updateCount; ++i){
-        const d = msg[i];
+        const d = listData[i];
         const c = children[i];
         c.source.write(d);
     }
@@ -229,8 +245,8 @@ Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
             } else {
                 el.appendChild(slot);
             }
-            const d = msg[i];
-            const cog = new Cog(this.url, slot, this, this.config, d, i);
+            const d = listData[i];
+            const cog = new Cog(this.url, slot, this, defData, d, i);
 
 
             children.push(cog);

@@ -15,6 +15,8 @@ let _id = 0;
 
 function Cog(url, slot, parent, def, data, key){
 
+    def = def || {};
+
     this.id = ++_id;
     this.type = 'cog';
     this.dead = false;
@@ -34,8 +36,10 @@ function Cog(url, slot, parent, def, data, key){
     this.url = url;
     this.root = '';
     this.script = null;
-    this.config = null; //(def && def.config) || def || {}; // todo inherit parent config if in chain?
-    this.source = null; //this.scope.demand('source');
+    this.def = def;
+
+
+    this.defineProps(def, data);
 
     //this.index = index;
     this.key = key;
@@ -49,19 +53,7 @@ function Cog(url, slot, parent, def, data, key){
     this.traitInstances = [];
     this.busInstances = [];
 
-    this.buildConfig(def);
 
-    if(this.parent && this.parent.type === 'chain') {
-        this.source = this.scope.demand('source');
-        this.source.write(data);
-    }
-
-    // // forward gear sources here
-    // if(this.parent && this.parent.type === 'gear'){
-    //     this.scope.bus()
-    //         .addSubscribe('source', this.parent.source)
-    //         .write(this.source).pull();
-    // }
 
     this.load();
 
@@ -252,12 +244,17 @@ Cog.prototype.loadTraits = function loadTraits(){
 
 };
 
+Cog.prototype.subscribeToParentSource = PartBuilder.subscribeToParentSource;
+Cog.prototype.extendDefToConfig = PartBuilder.extendDefToConfig;
+Cog.prototype.extendConfigAndSourceToProps = PartBuilder.extendConfigAndSourceToProps;
 Cog.prototype.buildStates = PartBuilder.buildStates;
 Cog.prototype.buildWires = PartBuilder.buildWires;
 Cog.prototype.buildRelays = PartBuilder.buildRelays;
+Cog.prototype.connectRelays = PartBuilder.connectRelays;
 Cog.prototype.buildActions = PartBuilder.buildActions;
 Cog.prototype.output = PartBuilder.output;
 Cog.prototype.buildConfig = PartBuilder.buildConfig;
+Cog.prototype.defineProps = PartBuilder.defineProps;
 
 Cog.prototype.buildEvents = function buildEvents(){
 
@@ -321,7 +318,7 @@ Cog.prototype.buildCogs = function buildCogs(){
 
     for(const slotName in cogs){
 
-        const def = cogs[slotName];
+        const def = cogs[slotName] || null;
         //AliasContext.applySplitUrl(def);
 
         const slot = this.namedSlots[slotName];
@@ -482,6 +479,13 @@ Cog.prototype.startTraits = function startTraits(){
 Cog.prototype.build = function build(){ // urls loaded
 
     // script.prep is called earlier
+
+    // todo make relays dynamic to config/source changes
+    // currently: hack on first data
+
+    const scope = this.scope;
+
+    console.log(this.url,this.config);
 
     this.mount(); // mounts display, calls script.mount, then mount for all traits
 

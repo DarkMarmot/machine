@@ -6,7 +6,7 @@ import PartBuilder from './partBuilder.js';
 
 let _id = 0;
 
-function Gear(url, slot, parent, def){
+function Gear(url, slot, parent, def, data){
 
     this.type = 'gear';
     this.id = ++_id;
@@ -18,23 +18,24 @@ function Gear(url, slot, parent, def){
     this.parent = parent;
     this.scope = parent.scope.createChild();
     this.root = parent.root;
-    this.config = null; //(def && def.config) || def || {};
 
     this.aliasContext = parent.aliasContext;
+    this.def = def || {};
 
-
-    this.buildConfig(def);
-    // this.sourceName = this.config.source;
-    // this.buildSource();
+    //this.defineProps(def, data);
 
     // todo add err url must be data pt! not real url (no dots in dp)
+
 
     const meow = url + ' * createCog';
     this.bus = this.scope.bus().context(this).meow(meow).pull();
 
 }
 
-Gear.prototype.buildConfig = PartBuilder.buildConfig;
+// Gear.prototype.defineProps = PartBuilder.defineProps;
+// Gear.prototype.subscribeToParentSource = PartBuilder.subscribeToParentSource;
+// Gear.prototype.extendDefToConfig = PartBuilder.extendDefToConfig;
+// Gear.prototype.extendConfigAndSourceToProps = PartBuilder.extendConfigAndSourceToProps;
 
 // Gear.prototype.buildSource = function(){
 //
@@ -77,14 +78,14 @@ Gear.prototype.createCog = function createCog(msg){
         const el = oldCog.getFirstElement(); //oldCog.elements[0]; // todo recurse first element for virtual cog
         const slot = Placeholder.take();
         el.parentNode.insertBefore(slot, el);
-        const cog = new Cog(url, slot, this);
+        const cog = new Cog(url, slot, this, this.def);
         children.push(cog);
         children.shift();
         oldCog.destroy();
 
     } else {
 
-        const cog = new Cog(url, this.placeholder, this);
+        const cog = new Cog(url, this.placeholder, this, this.def);
         children.push(cog);
 
     }

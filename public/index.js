@@ -38,7 +38,7 @@ Machine.cog({
         ];},
         animal: '',
         _animalPct: .74,
-        _animals: function(){ return [
+        animals: function(){ return [
                 {label: 'cat', value: 'c', icon: 'fa fa-home'},
                 {label: 'dog', value: 'd', icon: 'fa fa-cog'},
                 {label: 'bunny', value: 'b', icon: 'fa fa-space-shuttle'}
@@ -47,7 +47,7 @@ Machine.cog({
         _menuConfig: function(){ return {
 
                 item_renderer: 'BULMA icon_label.js',
-                source: '_animals',
+                source: 'animals',
                 clickTo: '$animal',
                 activeFrom: 'animal',
                 classes: '', //'is-right is-toggle is-boxed is-large',
@@ -58,7 +58,7 @@ Machine.cog({
         _sConfig: function(){ return {
 
             renderer: 'BULMA renderers/icon_label.js',
-            source: '_animals',
+            items: 'animals',
             clickTo: '$animal',
             activeFrom: 'animal',
             classes: 'is-right is-toggle is-boxed is-large',
@@ -68,7 +68,7 @@ Machine.cog({
     },
 
     buses: [
-      'others > _animals'
+      'others > animals'
     ],
     wires: {
         animal: 'bunny'

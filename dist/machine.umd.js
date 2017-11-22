@@ -418,6 +418,125 @@ function copy(source, target){
 const PartBuilder = {};
 
 
+PartBuilder.defineProps = function(def, data){
+
+    const scope = this.scope;
+
+    const localConfigData = this.config = scope.demand('config');
+    this.source = scope.demand('__source');
+    if(data)
+        this.source.write(data);
+    this.props = scope.demand('props');
+
+    const defConfig = def.config;
+
+    if(typeof defConfig === 'string'){ // subscribe to named config, overriding def
+        const namedConfigData = this.parent.scope.find(defConfig, true);
+        scope.bus()
+            .context(this)
+            .addSubscribe('config', namedConfigData)
+            .msg(this.extendDefToConfig)
+            .write(localConfigData).pull();
+    } else {
+        const rawConfigData = (typeof defConfig === 'function')
+            ? defConfig.call(null) : defConfig;
+        const mergedConfigData = this.extendDefToConfig(rawConfigData);
+        localConfigData.write(mergedConfigData);
+    }
+
+
+    scope.bus().context(this)
+        .meow('~ config, __source * extendConfigAndSourceToProps > props')
+        .pull();
+
+};
+
+PartBuilder.subscribeToParentSource = function(config){
+
+    if(this.parentSourceBus)
+        this.parentSourceBus.destroy();
+
+    const localSourceData = this.source;
+
+    if(!config.source){ // no source defined
+        localSourceData.write(undefined);
+        return;
+    }
+
+    if(typeof config.source === 'function'){
+        const f = config.source;
+        localSourceData.write(f.call(this.script));
+        return;
+    }
+
+    if(typeof config.source === 'string'){
+
+        const parentSourceName = config.source;
+        const parentSourceData = this.parent.scope.find(parentSourceName, true);
+
+        this.parentSourceBus = this.scope.bus().context(this)
+            .addSubscribe(parentSourceName, parentSourceData)
+            .write(localSourceData)
+            .pull();
+
+        return;
+
+    }
+
+
+    throw new Error('invalid source -- must be string or function');
+
+};
+
+const urlOrConfigHash = {url: true, config: true};
+
+
+
+// override def sans url and config with config hash
+PartBuilder.extendDefToConfig = function(config){
+
+    const def = this.def;
+    const result = {};
+
+    for(const k in def){
+        if(!urlOrConfigHash.hasOwnProperty(k)){
+            result[k] = def[k];
+        }
+    }
+
+    for(const k in config){
+        result[k] = config[k];
+    }
+
+    return result;
+
+};
+
+
+
+// override config sans source and config with config hash
+PartBuilder.extendConfigAndSourceToProps = function(msg){
+
+    const source = msg.__source;
+    const config = msg.config;
+    const result = {};
+
+    for(const k in config){
+        if(k !== 'source'){
+            result[k] = config[k];
+        }
+    }
+
+    if(source && typeof source === 'object') {
+        for (const k in source) {
+            result[k] = source[k];
+        }
+    }
+
+    return result;
+
+};
+
 PartBuilder.buildConfig = function buildConfig(def){
 
     if(!def && !this.parent) // empty root config
@@ -540,7 +659,6 @@ PartBuilder.buildWires = function buildWires(){
 PartBuilder.buildRelays = function buildRelays(){
 
     const scope = this.scope;
-    const config = this.config || this.scope.find('config').read();
     const relays = this.script.relays;
     const len = relays.length;
 
@@ -548,8 +666,8 @@ PartBuilder.buildRelays = function buildRelays(){
 
         const def = relays[i];
 
-        const actionProp = def.action || def.wire;
-        const stateProp = def.state || def.wire;
+        const actionProp = def.action;
+        const stateProp = def.state;
 
         let actionName = null;
         let stateName = null;
@@ -560,9 +678,44 @@ PartBuilder.buildRelays = function buildRelays(){
         if(stateProp)
             stateName = (stateProp[0] === '$') ? stateProp.substr(1) : stateProp;
 
-        // todo -- make $ prefix correct on these too, put in separate function
-        const remoteActionName = actionProp && config[actionProp];
-        const remoteStateName = stateProp && config[stateProp];
+        if(actionName)
+            scope.demand(actionName);
+
+        if(stateName)
+            scope.demand(stateName);
+
+    }
+
+    this.scope.bus().context(this).meow('props * connectRelays').pull();
+
+};
+
+PartBuilder.connectRelays = function connectRelays(props){
+
+    const scope = this.scope;
+    const relays = this.script.relays;
+    const len = relays.length;
+
+    // need to track and destroy on change
+
+    for(let i = 0; i < len; ++i){
+
+        const def = relays[i];
+
+        const actionProp = def.action;
+        const stateProp = def.state;
+
+        let actionName = null;
+        let stateName = null;
+
+        if(actionProp)
+            actionName = (actionProp[0] !== '$') ? '$' + actionProp : actionProp;
+
+        if(stateProp)
+            stateName = (stateProp[0] === '$') ? stateProp.substr(1) : stateProp;
+
+        const remoteActionName = actionProp && props[actionProp];
+        const remoteStateName = stateProp && props[stateProp];
 
         let remoteAction = remoteActionName ? scope._parent.find(remoteActionName, true) : null;
         let remoteState = remoteStateName ? scope._parent.find(remoteStateName, true) : null;
@@ -1704,11 +1857,12 @@ const phraseCmds = {
     '>': {name: 'WRITE', react: false, process: true, output: true, can_maybe: true, can_alias: true, can_prop: true},
     '|': {name: 'THEN_READ', react: false, process: true, output: false, can_maybe: true, can_alias: true, can_prop: true},
     '@': {name: 'EVENT', react: true, process: false, output: false, can_maybe: true, can_alias: true, can_prop: true},
-    '~': {name: 'WATCH_TOGETHER', react: true, process: false, output: false, can_maybe: true, can_alias: true, can_prop: true},
+    '}': {name: 'WATCH_TOGETHER', react: true, process: false, output: false, can_maybe: true, can_alias: true, can_prop: true},
     '#': {name: 'HOOK', react: false, process: true, output: true, can_maybe: false, can_alias: false, can_prop: false},
     '*': {name: 'METHOD', react: false, process: true, output: true, can_maybe: false, can_alias: false, can_prop: false},
     '%': {name: 'FILTER', react: false, process: true, output: false, can_maybe: false, can_alias: false, can_prop: false},
     '{': {name: 'WATCH_EACH', react: true, process: false, output: false, can_maybe: true, can_alias: true, can_prop: true},
+    '~': {name: 'WATCH_SOME', react: true, process: false, output: false, can_maybe: true, can_alias: true, can_prop: true}
 
 };
 
@@ -1834,7 +1988,7 @@ function parse(text){
         let content;
 
         if(!cmd && !phrases.length) { // default first cmd is WATCH_TOGETHER
-            cmd = phraseCmds['~'];
+            cmd = phraseCmds['}'];
             content = !phraseCmds[chunk] && chunk;
         } else if(cmd && chunks.length) {
             content = chunks.shift();
@@ -1873,7 +2027,7 @@ function filterEmptyStrings(arr){
 
 function splitPhraseDelimiters(text){
 
-    let chunks = text.split(/([&>|@~*%#{])/);
+    let chunks = text.split(/([&>|@~*%#{}])/);
     return filterEmptyStrings(chunks);
 
 }
@@ -1948,6 +2102,11 @@ function runPhrase(bus, phrase){
         watchEvents(bus, words);
     } else if(name === 'WATCH_EACH'){
         watchWords(bus, words);
+    } else if(name === 'WATCH_SOME'){
+        watchWords(bus, words);
+        if(multiple)
+            bus.merge().group();
+        bus.batch();
     } else if(name === 'WATCH_TOGETHER'){
         watchWords(bus, words);
         if(multiple)
@@ -2719,7 +2878,7 @@ class Bus {
 
         const f = FUNCTOR(fAny);
 
-        this._createNormalFrame(msgStreamBuilder(f, context));
+        this._createNormalFrame(msgStreamBuilder(f, context || this._context));
         return this;
 
 
@@ -3443,7 +3602,7 @@ Placeholder.give = function(el){
 
 let _id$1 = 0;
 
-function Gear(url, slot, parent, def){
+function Gear(url, slot, parent, def, data){
 
     this.type = 'gear';
     this.id = ++_id$1;
@@ -3455,23 +3614,24 @@ function Gear(url, slot, parent, def){
     this.parent = parent;
     this.scope = parent.scope.createChild();
     this.root = parent.root;
-    this.config = null; //(def && def.config) || def || {};
 
     this.aliasContext = parent.aliasContext;
+    this.def = def || {};
 
-
-    this.buildConfig(def);
-    // this.sourceName = this.config.source;
-    // this.buildSource();
+    //this.defineProps(def, data);
 
     // todo add err url must be data pt! not real url (no dots in dp)
+
 
     const meow = url + ' * createCog';
     this.bus = this.scope.bus().context(this).meow(meow).pull();
 
 }
 
-Gear.prototype.buildConfig = PartBuilder.buildConfig;
+// Gear.prototype.defineProps = PartBuilder.defineProps;
+// Gear.prototype.subscribeToParentSource = PartBuilder.subscribeToParentSource;
+// Gear.prototype.extendDefToConfig = PartBuilder.extendDefToConfig;
+// Gear.prototype.extendConfigAndSourceToProps = PartBuilder.extendConfigAndSourceToProps;
 
 // Gear.prototype.buildSource = function(){
 //
@@ -3514,14 +3674,14 @@ Gear.prototype.createCog = function createCog(msg){
         const el = oldCog.getFirstElement(); //oldCog.elements[0]; // todo recurse first element for virtual cog
         const slot = Placeholder.take();
         el.parentNode.insertBefore(slot, el);
-        const cog = new Cog(url, slot, this);
+        const cog = new Cog(url, slot, this, this.def);
         children.push(cog);
         children.shift();
         oldCog.destroy();
 
     } else {
 
-        const cog = new Cog(url, this.placeholder, this);
+        const cog = new Cog(url, this.placeholder, this, this.def);
         children.push(cog);
 
     }
@@ -3569,6 +3729,8 @@ let _id$2 = 0;
 
 function Chain(url, slot, parent, def, sourceName, keyField){
 
+    def = def || {};
+
     this.type = 'chain';
     this.id = ++_id$2;
     this.head = null;
@@ -3589,16 +3751,28 @@ function Chain(url, slot, parent, def, sourceName, keyField){
     this.sourceName = sourceName;
     this.keyField = keyField;
     this.bus = null;
+    this.def = def;
 
-    this.buildConfig(def);
+    this.defineProps(def);
 
-    this.sourceName = this.sourceName || this.config.source;
+    // subscribe source name to get source
+    this.scope.bus()
+        .context(this)
+        .addSubscribe('config', this.config)
+        .msg(this.subscribeToParentSource).pull(); // forwards to localSourceData
+
 
     this.load();
 
 }
 
-Chain.prototype.buildConfig = PartBuilder.buildConfig;
+
+
+Chain.prototype.defineProps = PartBuilder.defineProps;
+Chain.prototype.subscribeToParentSource = PartBuilder.subscribeToParentSource;
+Chain.prototype.extendDefToConfig = PartBuilder.extendDefToConfig;
+Chain.prototype.extendConfigAndSourceToProps = PartBuilder.extendConfigAndSourceToProps;
+Chain.prototype.defineProps = PartBuilder.defineProps;
 
 
 
@@ -3736,28 +3910,30 @@ Chain.prototype.getNamedElement = function getNamedElement(name){
 
 Chain.prototype.build = function build(){ // urls loaded
 
-    const name = this.sourceName;
-    const data = this.parent.scope.find(name, true);
+    // const name = this.sourceName;
+    // const data = this.parent.scope.find(name, true);
 
-    this.bus = this.scope.bus()
-        .addSubscribe(name, data)
-        .msg(this.buildCogsByIndex, this)
-        .pull();
-
+    this.scope.bus().context(this).meow('__source, config * buildCogsByIndex').pull();
+        // .addSubscribe(name, data)
+        // .msg(this.buildCogsByIndex, this)
+        // .pull();
 
 };
 
 
 Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
 
-    const len = msg.length;
+    const listData = msg.__source || [];
+    const defData = msg.config;
+
+    const len = listData.length;
     const children = this.children;
     const childCount = children.length;
     const updateCount = len > childCount ? childCount : len;
 
     // update existing
     for(let i = 0; i < updateCount; ++i){
-        const d = msg[i];
+        const d = listData[i];
         const c = children[i];
         c.source.write(d);
     }
@@ -3787,8 +3963,8 @@ Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
             } else {
                 el.appendChild(slot);
             }
-            const d = msg[i];
-            const cog = new Cog(this.url, slot, this, this.config, d, i);
+            const d = listData[i];
+            const cog = new Cog(this.url, slot, this, defData, d, i);
 
 
             children.push(cog);
@@ -4020,6 +4196,8 @@ let _id = 0;
 
 function Cog(url, slot, parent, def, data, key){
 
+    def = def || {};
+
     this.id = ++_id;
     this.type = 'cog';
     this.dead = false;
@@ -4039,8 +4217,10 @@ function Cog(url, slot, parent, def, data, key){
     this.url = url;
     this.root = '';
     this.script = null;
-    this.config = null; //(def && def.config) || def || {}; // todo inherit parent config if in chain?
-    this.source = null; //this.scope.demand('source');
+    this.def = def;
+
+
+    this.defineProps(def, data);
 
     //this.index = index;
     this.key = key;
@@ -4054,19 +4234,7 @@ function Cog(url, slot, parent, def, data, key){
     this.traitInstances = [];
     this.busInstances = [];
 
-    this.buildConfig(def);
 
-    if(this.parent && this.parent.type === 'chain') {
-        this.source = this.scope.demand('source');
-        this.source.write(data);
-    }
-
-    // // forward gear sources here
-    // if(this.parent && this.parent.type === 'gear'){
-    //     this.scope.bus()
-    //         .addSubscribe('source', this.parent.source)
-    //         .write(this.source).pull();
-    // }
 
     this.load();
 
@@ -4257,12 +4425,17 @@ Cog.prototype.loadTraits = function loadTraits(){
 
 };
 
+Cog.prototype.subscribeToParentSource = PartBuilder.subscribeToParentSource;
+Cog.prototype.extendDefToConfig = PartBuilder.extendDefToConfig;
+Cog.prototype.extendConfigAndSourceToProps = PartBuilder.extendConfigAndSourceToProps;
 Cog.prototype.buildStates = PartBuilder.buildStates;
 Cog.prototype.buildWires = PartBuilder.buildWires;
 Cog.prototype.buildRelays = PartBuilder.buildRelays;
+Cog.prototype.connectRelays = PartBuilder.connectRelays;
 Cog.prototype.buildActions = PartBuilder.buildActions;
 Cog.prototype.output = PartBuilder.output;
 Cog.prototype.buildConfig = PartBuilder.buildConfig;
+Cog.prototype.defineProps = PartBuilder.defineProps;
 
 Cog.prototype.buildEvents = function buildEvents(){
 
@@ -4326,7 +4499,7 @@ Cog.prototype.buildCogs = function buildCogs(){
 
     for(const slotName in cogs){
 
-        const def = cogs[slotName];
+        const def = cogs[slotName] || null;
         //AliasContext.applySplitUrl(def);
 
         const slot = this.namedSlots[slotName];
@@ -4488,6 +4661,13 @@ Cog.prototype.build = function build(){ // urls loaded
 
     // script.prep is called earlier
 
+    // todo make relays dynamic to config/source changes
+    // currently: hack on first data
+
+    const scope = this.scope;
+
+    console.log(this.url,this.config);
+
     this.mount(); // mounts display, calls script.mount, then mount for all traits
 
     this.buildStates();
@@ -4601,11 +4781,14 @@ Machine.lib = define;
 Machine.init = function init(slot, url){
 
     url = PathResolver.resolveUrl(null, url);
-    const root = new Cog(url, slot);
+    const root = new Cog(url, slot, null, {});
     root.scope.demand('source');
     return root;
 
 };
+
+
+
 
 const defaultMethods = ['prep','init','mount','start','unmount','destroy'];
 const defaultArrays = ['traits',  'buses', 'books', 'relays'];

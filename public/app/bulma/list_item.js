@@ -3,8 +3,9 @@ Machine.cog({
 
     mount: function(){
         const s = this.cog.scope;
-      console.log('s', s.find('source'));
+        console.log('s', s.find('source'));
     },
+
     display: '<li name="item"><slot name="renderer"></slot></li>',
 
 
@@ -26,10 +27,9 @@ Machine.cog({
 
     calcs: {
 
-        active: 'settings, activeFrom * isMatch',
-        settings: '{ config, source | config, source * toSettings',
-        clickValue: 'settings * toValue',
-        renderer: 'settings.item_renderer'
+        active: 'props, activeFrom * isMatch',
+        clickValue: 'props * toValue',
+        renderer: 'props * toRenderer'
 
     },
 
@@ -39,37 +39,22 @@ Machine.cog({
         });
     },
 
-    toSettings: function(msg){
+    toRenderer: function(props){
 
-        const config = msg.config;
-        const source = msg.source || {};
-        const settings = {};
-
-        for(const k in config){
-            settings[k] = config[k];
-        }
-
-        for(const k in source){
-            settings[k] = source[k];
-        }
-
-        settings.item_renderer = settings.item_renderer || 'anchor.js';
-
-        return settings;
+        return props.item_renderer || 'anchor.js';
 
     },
 
-    toValue: function(settings){
+    toValue: function(props){
 
-        const value = settings.value;
-        return settings.toggle_value ? !value : value;
+        const value = props.value;
+        return props.toggle_value ? !value : value;
 
     },
 
     isMatch: function(msg){
-
-        const settings = msg.settings;
-        const localMatch = settings.hasOwnProperty('match') ? settings.match : settings.value;
+        const props = msg.props;
+        const localMatch = props.hasOwnProperty('match') ? props.match : props.value;
         return localMatch === msg.activeFrom;
 
     }

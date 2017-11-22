@@ -11,60 +11,45 @@ Machine.cog({
     ],
 
     actions: {
-        doClick: '| settings, activeFrom * toClickValue > $clickTo',
+        doClick: '| props, activeFrom * toClickValue > $clickTo',
     },
 
     gears: {
-        renderer: {url: 'renderer', doClick: '$doClick', active: 'active'}
+        renderer: {url: 'renderer', doClick: '$doClick', active: 'active', config: 'props'}
     },
 
     calcs: {
 
-        active: 'settings, activeFrom * isActive',
-        settings: '{ config, source | config, source * toSettings',
-        renderer: 'settings.renderer'
+        active: 'props, activeFrom * isActive',
+        renderer: 'props * toRenderer'
 
     },
 
-    toSettings: function(msg){
+    toRenderer: function(props){
 
-        const config = msg.config;
-        const source = msg.source || {};
-        const settings = {};
-
-        for(const k in config){
-            settings[k] = config[k];
-        }
-
-        for(const k in source){
-            settings[k] = source[k];
-        }
-
-        settings.renderer = settings.renderer || './renderers/anchor.js';
-
-        return settings;
+        return props.renderer || './renderers/anchor.js';
 
     },
 
     toClickValue: function(msg){
 
-        const settings = msg.settings;
+        const props = msg.props;
         const currentValue = msg.activeFrom;
-        const clickValue = settings.value;
+        const clickValue = props.value;
 
-        return settings.toggle ? !currentValue : clickValue;
+        return props.toggle ? !currentValue : clickValue;
 
     },
 
     isActive: function(msg){
 
-        const settings = msg.settings;
+        const props = msg.props;
         const currentValue = msg.activeFrom;
 
-        if(settings.toggle)
+        if(props.toggle)
             return !!currentValue;
 
-        const matchValue = settings.hasOwnProperty('match') ? settings.match : settings.value;
+        const matchValue = props.hasOwnProperty('match') ? props.match : props.value;
         return matchValue === currentValue;
 
     }
