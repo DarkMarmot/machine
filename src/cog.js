@@ -13,7 +13,7 @@ import Placeholder from './placeholder.js';
 
 let _id = 0;
 
-function Cog(url, slot, parent, def, data, key){
+function Cog(url, slot, parent, def, key){
 
     def = def || {};
 
@@ -39,7 +39,7 @@ function Cog(url, slot, parent, def, data, key){
     this.def = def;
 
 
-    this.defineProps(def, data);
+    this.defineProps(def);
 
     //this.index = index;
     this.key = key;

@@ -2,74 +2,45 @@
 const PartBuilder = {};
 
 
-PartBuilder.defineProps = function(def, data){
+// this.source = scope.demand('__source');
+// if(data)
+//     this.source.write(data);
+
+function copyWithoutUrlOrConfig(props){
+    const result = {};
+    for(const k in props){
+        if(k !== 'url' && k !== 'config'){
+            result[k] = props[k];
+        }
+    }
+    return result;
+}
+
+PartBuilder.defineProps = function(def){ // for gears and cogs
 
     const scope = this.scope;
-
-    const localConfigData = this.config = scope.demand('config');
-    this.source = scope.demand('__source');
-    if(data)
-        this.source.write(data);
     this.props = scope.demand('props');
 
     const defConfig = def.config;
+    const finalDef = copyWithoutUrlOrConfig(def);
 
-    if(typeof defConfig === 'string'){ // subscribe to named config, overriding def
+    if(defConfig && typeof defConfig === 'string'){ // subscribe to named config, overriding def
         const namedConfigData = this.parent.scope.find(defConfig, true);
-        scope.bus()
-            .context(this)
+        scope.bus().context(this)
             .addSubscribe('config', namedConfigData)
             .msg(this.extendDefToConfig)
-            .write(localConfigData).pull();
+            .write(this.props).pull();
     } else {
-        const rawConfigData = (typeof defConfig === 'function')
-            ? defConfig.call(null) : defConfig;
-        const mergedConfigData = this.extendDefToConfig(rawConfigData);
-        localConfigData.write(mergedConfigData);
+        // props doesn't subscribe to a dynamic config point
+        this.props.write(finalDef);
     }
 
-    scope.bus().context(this)
-        .meow('~ config, __source * extendConfigAndSourceToProps > props')
-        .pull();
+    // scope.bus().context(this)
+    //     .meow('~ config, __source * extendConfigAndSourceToProps > props')
+    //     .pull();
 
 };
 
-PartBuilder.subscribeToParentSource = function(config){
-
-    if(this.parentSourceBus)
-        this.parentSourceBus.destroy();
-
-    const localSourceData = this.source;
-
-    if(!config.source){ // no source defined
-        localSourceData.write(undefined);
-        return;
-    }
-
-    if(typeof config.source === 'function'){
-        const f = config.source;
-        localSourceData.write(f.call(this.script));
-        return;
-    }
-
-    if(typeof config.source === 'string'){
-
-        const parentSourceName = config.source;
-        const parentSourceData = this.parent.scope.find(parentSourceName, true);
-
-        this.parentSourceBus = this.scope.bus().context(this)
-            .addSubscribe(parentSourceName, parentSourceData)
-            .write(localSourceData)
-            .pull();
-
-        return;
-
-    }
-
-
-    throw new Error('invalid source -- must be string or function');
-
-};
 
 const urlOrConfigHash = {url: true, config: true};
 

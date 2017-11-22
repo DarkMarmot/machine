@@ -17,7 +17,8 @@ Machine.cog({
         '<slot name="anchor"></slot>' +
         '<slot name="icon_label"></slot>' +
         '<slot name="selectable"></slot>' +
-        '<slot name="t"></slot>',
+        '<slot name="t"></slot>' +
+    '<div class="tabs is-toggle"><ul><slot name="chain"></slot></ul></div>',
 
 
     aliases: {
@@ -86,15 +87,16 @@ Machine.cog({
         d3: 'D3'
     },
 
-    // chains: {
-    //     menu: {
-    //         url: 'BULMA list_item.js',
-    //         item_renderer: 'BULMA anchor.js',
-    //         source: '_animals',
-    //         clickTo: '$animal',
-    //         activeFrom: 'animal'
-    //     }
-    // },
+    chains: {
+        chain: {
+            url: 'BULMA selectable.js',
+            renderer: 'BULMA renderers/icon_label.js',
+            source: '_animals',
+            clickTo: '$animal',
+            activeFrom: 'animal',
+            classes: 'is-left is-toggle is-boxed is-large'
+        }
+    },
 
     cogs: {
         babbage: 'LOVELACE',

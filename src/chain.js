@@ -34,24 +34,54 @@ function Chain(url, slot, parent, def, sourceName, keyField){
     this.keyField = keyField;
     this.bus = null;
     this.def = def;
+    this.parentSourceBus = null;
 
+    this.source = this.scope.demand('__source');
     this.defineProps(def);
 
     // subscribe source name to get source
     this.scope.bus()
         .context(this)
-        .addSubscribe('config', this.config)
+        .addSubscribe('props', this.props)
         .msg(this.subscribeToParentSource).pull(); // forwards to localSourceData
-
 
     this.load();
 
 }
 
+Chain.prototype.subscribeToParentSource = function(props){
+
+    if(this.parentSourceBus)
+        this.parentSourceBus.destroy();
+
+    const parentSourceName = props.source;
+    const localSourceData = this.source;
+
+    if(!props.source){ // no source defined
+        localSourceData.write([]);
+        return;
+    }
+
+    if(parentSourceName && typeof parentSourceName === 'string'){
+
+        const parentSourceData = this.parent.scope.find(parentSourceName, true);
+
+        this.parentSourceBus = this.scope.bus().context(this)
+            .addSubscribe(parentSourceName, parentSourceData)
+            .write(localSourceData)
+            .pull();
+
+        return;
+
+    }
+
+    throw new Error('invalid source -- must be string or function');
+
+};
+
 
 
 Chain.prototype.defineProps = PartBuilder.defineProps;
-Chain.prototype.subscribeToParentSource = PartBuilder.subscribeToParentSource;
 Chain.prototype.extendDefToConfig = PartBuilder.extendDefToConfig;
 Chain.prototype.extendConfigAndSourceToProps = PartBuilder.extendConfigAndSourceToProps;
 Chain.prototype.defineProps = PartBuilder.defineProps;
@@ -192,21 +222,38 @@ Chain.prototype.getNamedElement = function getNamedElement(name){
 
 Chain.prototype.build = function build(){ // urls loaded
 
-    // const name = this.sourceName;
-    // const data = this.parent.scope.find(name, true);
 
-    this.scope.bus().context(this).meow('__source, config * buildCogsByIndex').pull();
-        // .addSubscribe(name, data)
-        // .msg(this.buildCogsByIndex, this)
-        // .pull();
+    this.scope.bus().context(this).meow('__source, props * buildCogsByIndex').pull();
+
 
 };
 
+function copyWithoutSourceOrConfig(props){
+    const result = {};
+    for(const k in props){
+        if(k !== 'source' && k !== 'config'){
+            result[k] = props[k];
+        }
+    }
+    return result;
+}
+
+function extendObject(base, overrider){
+    const result = {};
+    for(const k in base){
+        result[k] = base[k];
+    }
+    for(const k in overrider){
+        result[k] = overrider[k];
+    }
+    return result;
+}
 
 Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
 
-    const listData = msg.__source || [];
-    const defData = msg.config;
+    const sourceData = msg.__source || [];
+    const propsData = copyWithoutSourceOrConfig(msg.props);
+    const listData = sourceData.map(function(d){ return extendObject(propsData, d);});
 
     const len = listData.length;
     const children = this.children;
@@ -217,7 +264,7 @@ Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
     for(let i = 0; i < updateCount; ++i){
         const d = listData[i];
         const c = children[i];
-        c.source.write(d);
+        c.props.write(d);
     }
 
     if(len === 0 && childCount > 0){
@@ -246,7 +293,7 @@ Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
                 el.appendChild(slot);
             }
             const d = listData[i];
-            const cog = new Cog(this.url, slot, this, defData, d, i);
+            const cog = new Cog(this.url, slot, this, d, i);
 
 
             children.push(cog);
