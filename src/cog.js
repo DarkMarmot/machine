@@ -13,6 +13,8 @@ import Placeholder from './placeholder.js';
 
 let _id = 0;
 
+const validTags = {COG: true, CHAIN: true, GEAR: true, SLOT: true};
+
 function Cog(url, slot, parent, def, key){
 
     def = def || {};
@@ -66,9 +68,7 @@ Cog.prototype.mountDisplay = function() {
     if(!this.script.display) // check for valid html node
         return;
 
-    let frag = document
-        .createRange()
-        .createContextualFragment(this.script.display);
+    let frag = this.script.__frag.cloneNode(true);
 
     const named = frag.querySelectorAll('[name]');
     const len = named.length;
@@ -80,7 +80,9 @@ Cog.prototype.mountDisplay = function() {
         const el = named[i];
         const name = el.getAttribute('name');
         const tag = el.tagName;
-        if(tag === 'SLOT'){
+         if(validTags[tag]){
+        //     console.log('tag is:', tag);
+        // if(tag === 'SLOT'){
             this.namedSlots[name] = el;
         } else {
             hash[name] = el;

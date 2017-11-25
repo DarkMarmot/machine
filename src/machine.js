@@ -2,6 +2,8 @@ import PathResolver from './pathResolver.js';
 import ScriptLoader from './scriptLoader.js';
 import ScriptMonitor from './scriptMonitor.js';
 import Cog from './cog.js';
+import Placeholder from './placeholder.js';
+
 
 let Machine = {};
 
@@ -51,6 +53,57 @@ function createWhiteList(v){
 
     return TRUE;
 }
+
+function prepDisplay(def) {
+
+    if(!def.display) // check for valid html node
+        return;
+
+    let frag = document
+        .createRange()
+        .createContextualFragment(def.display);
+
+    def.__frag = frag;
+
+    const els = frag.querySelectorAll('chain,cog,gear');
+    const len = els.length;
+    const propNamesByTag = {CHAIN: 'chains', COG: 'cogs', GEAR: 'gears'};
+    const validAttrs = {config: true, source: true, url: true};
+
+    for(let i = 0; i < len; ++i){
+
+        const el = els[i];
+        let name = el.getAttribute('name');
+        if(!name){
+            name =  '__' + i;
+            el.setAttribute('name', name);
+        }
+
+        const attrs = el.attributes;
+        const attrHash = {};
+
+        for(let i = 0; i < attrs.length; i++) {
+            const attr = attrs[i];
+            if(validAttrs[attr.name])
+                attrHash[attr.name] = attr.value;
+        }
+
+        const tag = el.tagName;
+        const prop = propNamesByTag[tag];
+        const hash = def[prop];
+
+        if(attrHash.url && !hash.hasOwnProperty(name)) {
+            hash[name] = attrHash;
+            const slot = Placeholder.take();
+            slot.setAttribute('name', name);
+            el.parentNode.replaceChild(slot, el);
+        }
+
+    }
+
+}
+
+
 
 function prepLibDefs(data){
 
@@ -267,6 +320,7 @@ Machine.cog = function cog(def){
     def.type = 'cog';
 
 
+
     for(let i = 0; i < defaultHashes.length; i++){
         const name = defaultHashes[i];
         def[name] = def[name] || {};
@@ -282,6 +336,7 @@ Machine.cog = function cog(def){
         def[name] = def[name] || NOOP;
     }
 
+    prepDisplay(def);
     splitCalcDefs(def);
 
     def.libs = prepLibDefs(def.libs);

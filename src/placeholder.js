@@ -18,10 +18,14 @@ Placeholder.give = function(el){
     if(el.parentNode)
         el.parentNode.removeChild(el);
 
-    if(el.hasAttribute('name'))
-        el.removeAttribute('name');
+    if(el.tagName === 'SLOT') {
 
-    pool.push(el);
+        if (el.hasAttribute('name'))
+            el.removeAttribute('name');
+
+        pool.push(el);
+
+    }
 
 };
 

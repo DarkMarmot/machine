@@ -1903,6 +1903,10 @@ function parseSyllables(word){
 
     let arg = null;
 
+    if(chunks[0] === '.'){ // default as props, todo clean this while parse thing up :)
+        arg = {name: 'props', maybe: false};
+    }
+
     while(chunks.length) {
 
         const syllable = chunks.shift();
@@ -3564,10 +3568,14 @@ Placeholder.give = function(el){
     if(el.parentNode)
         el.parentNode.removeChild(el);
 
-    if(el.hasAttribute('name'))
-        el.removeAttribute('name');
+    if(el.tagName === 'SLOT') {
 
-    pool.push(el);
+        if (el.hasAttribute('name'))
+            el.removeAttribute('name');
+
+        pool.push(el);
+
+    }
 
 };
 
@@ -4212,6 +4220,8 @@ AlterDom.prototype.styles = function(changes) {
 
 let _id = 0;
 
+const validTags = {COG: true, CHAIN: true, GEAR: true, SLOT: true};
+
 function Cog(url, slot, parent, def, key){
 
     def = def || {};
@@ -4265,9 +4275,7 @@ Cog.prototype.mountDisplay = function() {
     if(!this.script.display) // check for valid html node
         return;
 
-    let frag = document
-        .createRange()
-        .createContextualFragment(this.script.display);
+    let frag = this.script.__frag.cloneNode(true);
 
     const named = frag.querySelectorAll('[name]');
     const len = named.length;
@@ -4279,7 +4287,9 @@ Cog.prototype.mountDisplay = function() {
         const el = named[i];
         const name = el.getAttribute('name');
         const tag = el.tagName;
-        if(tag === 'SLOT'){
+         if(validTags[tag]){
+        //     console.log('tag is:', tag);
+        // if(tag === 'SLOT'){
             this.namedSlots[name] = el;
         } else {
             hash[name] = el;
@@ -4827,6 +4837,57 @@ function createWhiteList(v){
     return TRUE;
 }
 
+function prepDisplay(def) {
+
+    if(!def.display) // check for valid html node
+        return;
+
+    let frag = document
+        .createRange()
+        .createContextualFragment(def.display);
+
+    def.__frag = frag;
+
+    const els = frag.querySelectorAll('chain,cog,gear');
+    const len = els.length;
+    const propNamesByTag = {CHAIN: 'chains', COG: 'cogs', GEAR: 'gears'};
+    const validAttrs = {config: true, source: true, url: true};
+
+    for(let i = 0; i < len; ++i){
+
+        const el = els[i];
+        let name = el.getAttribute('name');
+        if(!name){
+            name =  '__' + i;
+            el.setAttribute('name', name);
+        }
+
+        const attrs = el.attributes;
+        const attrHash = {};
+
+        for(let i = 0; i < attrs.length; i++) {
+            const attr = attrs[i];
+            if(validAttrs[attr.name])
+                attrHash[attr.name] = attr.value;
+        }
+
+        const tag = el.tagName;
+        const prop = propNamesByTag[tag];
+        const hash = def[prop];
+
+        if(attrHash.url && !hash.hasOwnProperty(name)) {
+            hash[name] = attrHash;
+            const slot = Placeholder.take();
+            slot.setAttribute('name', name);
+            el.parentNode.replaceChild(slot, el);
+        }
+
+    }
+
+}
+
+
+
 function prepLibDefs(data){
 
     if(!data)
@@ -5025,6 +5086,7 @@ Machine.cog = function cog(def){
     def.type = 'cog';
 
 
+
     for(let i = 0; i < defaultHashes.length; i++){
         const name = defaultHashes[i];
         def[name] = def[name] || {};
@@ -5040,6 +5102,7 @@ Machine.cog = function cog(def){
         def[name] = def[name] || NOOP;
     }
 
+    prepDisplay(def);
     splitCalcDefs(def);
 
     def.libs = prepLibDefs(def.libs);

@@ -18,7 +18,7 @@ Machine.cog({
     },
 
     buses: [
-        'props.icon, props.label, active * render'
+        '.icon, .label, active * render'
     ],
 
     render: function(msg){

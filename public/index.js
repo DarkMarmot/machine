@@ -2,7 +2,7 @@
 Machine.cog({
 
     mount: function(){
-
+console.log('index mount');
     },
 
     display:
@@ -10,14 +10,14 @@ Machine.cog({
         '<div>' +
             'Welcome to the Machine' +
         '</div>' +
-        '<slot name="babbage"></slot>' +
+        '<cog url="LOVELACE"></cog>' +
         '<div class="tabs is-toggle"><ul><slot name="menu"></slot></ul></div>' +
         '<slot name="button"></slot>' +
-        '<slot name="progress"></slot>' +
-        '<slot name="anchor"></slot>' +
+        '<cog url="BULMA progress.js" config="_progress"></cog>' +
+        '<cog url="BULMA anchor.js" config="_anchor"></cog>' +
         '<slot name="icon_label"></slot>' +
         '<slot name="selectable"></slot>' +
-        '<slot name="t"></slot>' +
+        '<cog url="BULMA tabs2.js" config="_menuConfig"></cog>' +
     '<div class="tabs is-toggle"><ul><slot name="chain"></slot></ul></div>',
 
 
@@ -32,6 +32,10 @@ Machine.cog({
     },
 
     states: {
+
+        _anchor: function(){ return { label: 'Kitten Happy!'}},
+        _progress: function(){ return { valueFrom: '_animalPct'}},
+
         others: function(){ return [
             {label: 'frog', value: 'x', icon: 'fa fa-home'},
             {label: 'salamander', value: 'y', icon: 'fa fa-cog'},
@@ -76,7 +80,7 @@ Machine.cog({
     },
 
     buses: [
-      'others > _animals'
+      // 'others > _animals'
     ],
     wires: {
         animal: 'bunny'
@@ -99,15 +103,15 @@ Machine.cog({
     },
 
     cogs: {
-        babbage: 'LOVELACE',
+        // babbage: 'LOVELACE',
 
-        t: {
-            url: 'BULMA tabs2.js',
-            config: '_menuConfig'
-        },
+        // t: {
+        //     url: 'BULMA tabs2.js',
+        //     config: '_menuConfig'
+        // },
 
         selectable: {
-            url: 'BULMA tabs2.js',
+            url: 'BULMA breadcrumb2.js',
             renderer: 'BULMA renderers/icon_label.js',
             items: '_animals',
             clickTo: '$animal',
@@ -115,14 +119,14 @@ Machine.cog({
             classes: 'is-right is-toggle is-boxed is-large'
         },
 
-        progress: {
-            url: 'BULMA progress.js',
-            valueFrom: '_animalPct'
-        },
-        anchor: {
-            url: 'BULMA anchor.js',
-            label: 'Kitten Rage!'
-        },
+        // progress: {
+        //     url: 'BULMA progress.js',
+        //     valueFrom: '_animalPct'
+        // },
+        // anchor: {
+        //     url: 'BULMA anchor.js',
+        //     label: 'Kitten Rage!'
+        // },
         icon_label: {
             url: 'BULMA icon_label.js',
             config: 'meowing'

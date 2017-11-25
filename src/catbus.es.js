@@ -1116,6 +1116,10 @@ function parseSyllables(word){
 
     let arg = null;
 
+    if(chunks[0] === '.'){ // default as props, todo clean this while parse thing up :)
+        arg = {name: 'props', maybe: false};
+    }
+
     while(chunks.length) {
 
         const syllable = chunks.shift();

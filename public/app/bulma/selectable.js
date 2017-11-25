@@ -1,17 +1,14 @@
 
 Machine.cog({
 
-    // relays: action: activeTo, state: activeFrom, wire: active
-    // action: doClick ..
-    //
-    display: '<slot name="renderer"></slot>',
+    display: '<slot name="renderer" ></slot>',
 
     relays: [
         {action: 'clickTo', state: 'activeFrom'}
     ],
 
     actions: {
-        doClick: '| props, activeFrom * toClickValue > $clickTo',
+        doClick: '| .value, .toggle, activeFrom * toClickValue > $clickTo',
     },
 
     gears: {
@@ -20,37 +17,36 @@ Machine.cog({
 
     calcs: {
 
-        active: 'props, activeFrom * isActive',
-        renderer: 'props * toRenderer'
+        // selectorConfig: 'props * extendConfig',
+        active: '~ .value, .toggle, activeFrom * isActive',
+        renderer: '.renderer * toRenderer'
 
     },
 
-    toRenderer: function(props){
 
-        return props.renderer || './renderers/anchor.js';
+    toRenderer: function(renderer){
+
+        return renderer || './renderers/anchor.js';
 
     },
 
     toClickValue: function(msg){
 
-        const props = msg.props;
         const currentValue = msg.activeFrom;
-        const clickValue = props.value;
+        const clickValue = msg.value;
 
-        return props.toggle ? !currentValue : clickValue;
+        return msg.toggle ? !currentValue : clickValue;
 
     },
 
     isActive: function(msg){
 
-        const props = msg.props;
         const currentValue = msg.activeFrom;
 
-        if(props.toggle)
+        if(msg.toggle)
             return !!currentValue;
 
-        const matchValue = props.hasOwnProperty('match') ? props.match : props.value;
-        return matchValue === currentValue;
+        return msg.value === currentValue;
 
     }
 

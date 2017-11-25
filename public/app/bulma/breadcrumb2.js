@@ -1,7 +1,7 @@
 
 Machine.cog({
 
-    display: '<div name="tabs"><ul>' +
+    display: '<div name="breadcrumb"><ul>' +
     '<chain url="BULMA selectable.js" config="props" source="items"></chain>' +
     '</ul></div>',
 
@@ -15,7 +15,7 @@ Machine.cog({
 
     render: function(classes){
 
-        this.dom.tabs.setClasses('tabs ' + (classes || ''));
+        this.dom.breadcrumb.setClasses('breadcrumb ' + (classes || ''));
 
     }
 
