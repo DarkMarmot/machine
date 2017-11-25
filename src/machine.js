@@ -37,7 +37,7 @@ Machine.init = function init(slot, url){
 
 const defaultMethods = ['prep','init','mount','start','unmount','destroy'];
 const defaultArrays = ['traits',  'buses', 'books', 'relays'];
-const defaultHashes = ['aliases','els', 'libs', 'states', 'actions','cogs', 'chains', 'gears', 'events'];
+const defaultHashes = ['aliases','relays2','els', 'libs', 'states', 'actions','cogs', 'chains', 'gears', 'events'];
 
 
 function createWhiteList(v){

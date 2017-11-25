@@ -252,6 +252,7 @@ Cog.prototype.extendConfigAndSourceToProps = PartBuilder.extendConfigAndSourceTo
 Cog.prototype.buildStates = PartBuilder.buildStates;
 Cog.prototype.buildWires = PartBuilder.buildWires;
 Cog.prototype.buildRelays = PartBuilder.buildRelays;
+Cog.prototype.buildRelays2 = PartBuilder.buildRelays2;
 Cog.prototype.connectRelays = PartBuilder.connectRelays;
 Cog.prototype.buildActions = PartBuilder.buildActions;
 Cog.prototype.output = PartBuilder.output;
@@ -494,6 +495,7 @@ Cog.prototype.build = function build(){ // urls loaded
     this.buildStates();
     this.buildWires();
     this.buildRelays();
+    this.buildRelays2();
     this.buildActions();
 
 

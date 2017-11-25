@@ -415,6 +415,44 @@ function copy(source, target){
 
 }
 
+function Relay(cog, name, remote){
+
+
+    this.cog = cog;
+    this.name = name;
+    this.remote = remote;
+    this.localData = cog.scope.demand(name);
+    this.isAction = name.slice(-1) === '$';
+    this.valueBus = null;
+    this.nameBus = cog.scope.bus()
+        .context(cog.script)
+        .meow(remote)
+        .msg(this.connect, this).pull();
+
+
+}
+
+Relay.prototype.connect = function(remoteName){
+
+    if(this.valueBus)
+        this.valueBus.destroy();
+
+    if(typeof remoteName !== 'string')
+        return; // todo throw warning or error?
+
+    // remoteName must be data name at parent scope!
+    const remoteData = this.cog.parent.scope.find(remoteName, true);
+
+    if(this.isAction) {
+        this.valueBus = this.cog.scope.bus()
+            .addSubscribe(this.name, this.localData).write(remoteData);
+    } else {
+        this.valueBus = this.cog.scope.bus()
+            .addSubscribe(remoteData.name, remoteData).write(this.localData).pull();
+    }
+
+};
+
 const PartBuilder = {};
 
 
@@ -626,6 +664,20 @@ PartBuilder.buildWires = function buildWires(){
 
 };
 
+PartBuilder.buildRelays2 = function buildRelays2(){
+
+
+    const relays = this.script.relays2;
+    this.relays = {};
+
+    for(const name in relays) {
+
+        const remote = relays[name];
+        this.relays[name] = new Relay(this, name, remote);
+
+    }
+
+};
 
 PartBuilder.buildRelays = function buildRelays(){
 
@@ -4459,6 +4511,7 @@ Cog.prototype.extendConfigAndSourceToProps = PartBuilder.extendConfigAndSourceTo
 Cog.prototype.buildStates = PartBuilder.buildStates;
 Cog.prototype.buildWires = PartBuilder.buildWires;
 Cog.prototype.buildRelays = PartBuilder.buildRelays;
+Cog.prototype.buildRelays2 = PartBuilder.buildRelays2;
 Cog.prototype.connectRelays = PartBuilder.connectRelays;
 Cog.prototype.buildActions = PartBuilder.buildActions;
 Cog.prototype.output = PartBuilder.output;
@@ -4701,6 +4754,7 @@ Cog.prototype.build = function build(){ // urls loaded
     this.buildStates();
     this.buildWires();
     this.buildRelays();
+    this.buildRelays2();
     this.buildActions();
 
 
@@ -4820,7 +4874,7 @@ Machine.init = function init(slot, url){
 
 const defaultMethods = ['prep','init','mount','start','unmount','destroy'];
 const defaultArrays = ['traits',  'buses', 'books', 'relays'];
-const defaultHashes = ['aliases','els', 'libs', 'states', 'actions','cogs', 'chains', 'gears', 'events'];
+const defaultHashes = ['aliases','relays2','els', 'libs', 'states', 'actions','cogs', 'chains', 'gears', 'events'];
 
 
 function createWhiteList(v){

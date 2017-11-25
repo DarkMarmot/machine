@@ -25,15 +25,18 @@ Relay.prototype.connect = function(remoteName){
         return; // todo throw warning or error?
 
     // remoteName must be data name at parent scope!
-    const remoteData = this.cog._parent.scope.find(remoteName, true);
+    const remoteData = this.cog.parent.scope.find(remoteName, true);
 
     if(this.isAction) {
-        this.valueBus = this.cog._parent.scope.bus()
-            .addSubscribe(this.localData).write(remoteData);
+        this.valueBus = this.cog.scope.bus()
+            .addSubscribe(this.name, this.localData).write(remoteData);
     } else {
-        this.valueBus = this.cog._parent.scope.bus()
-            .addSubscribe(this.name, remoteData).write(this.localData).pull();
+        this.valueBus = this.cog.scope.bus()
+            .addSubscribe(remoteData.name, remoteData).write(this.localData).pull();
     }
 
 };
+
+export default Relay;
+
 

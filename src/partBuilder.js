@@ -1,4 +1,6 @@
 
+import Relay from './relay.js';
+
 const PartBuilder = {};
 
 
@@ -210,6 +212,20 @@ PartBuilder.buildWires = function buildWires(){
 
 };
 
+PartBuilder.buildRelays2 = function buildRelays2(){
+
+
+    const relays = this.script.relays2;
+    this.relays = {};
+
+    for(const name in relays) {
+
+        const remote = relays[name];
+        this.relays[name] = new Relay(this, name, remote);
+
+    }
+
+};
 
 PartBuilder.buildRelays = function buildRelays(){
 
