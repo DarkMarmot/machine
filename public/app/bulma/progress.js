@@ -3,7 +3,7 @@ Machine.cog({
 
     display: '<progress name="progress"></progress>',
 
-    relays2:
+    relays:
         {valueFrom: '.valueFrom'}
     ,
 

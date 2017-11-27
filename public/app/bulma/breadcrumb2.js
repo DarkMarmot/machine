@@ -5,7 +5,7 @@ Machine.cog({
     '<chain url="BULMA selectable.js" config="props" source="items"></chain>' +
     '</ul></div>',
 
-    relays2: {
+    relays: {
         items: '.items'
     },
 

@@ -3,13 +3,13 @@ Machine.cog({
 
     display: '<li name="item"><a name="anchor"><span class="icon"><i name="icon"></i></span><span name="label"></span></a></li>',
 
-    relays: [
-        {action: 'doClick'},
-        {state: 'active'}
-    ],
+    relays: {
+        doClick$: '.doClick',
+        active: '.active'
+    },
 
     events: {
-        item: '@ click * preventDefault > $doClick',
+        item: '@ click * preventDefault > doClick$',
     },
 
     preventDefault: function(e){
@@ -18,16 +18,23 @@ Machine.cog({
     },
 
     buses: [
-        '.icon, .label, active * render'
+        '.icon, .label * render',
+        'active * renderActive'
     ],
 
     render: function(msg){
 
         this.dom.label.text(msg.label);
         this.dom.icon.setClasses(msg.icon || '');
+
+    },
+
+    renderActive: function(active){
+
         this.dom.item.toggleClasses({
-            'is-active': msg.active
+            'is-active': active
         });
+
     }
 
 });

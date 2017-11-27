@@ -9,7 +9,7 @@ Machine.cog({
     //     {state: 'items'}
     // ],
 
-    relays2: {
+    relays: {
         items: '.items'
     },
 

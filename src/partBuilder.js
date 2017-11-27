@@ -212,10 +212,10 @@ PartBuilder.buildWires = function buildWires(){
 
 };
 
-PartBuilder.buildRelays2 = function buildRelays2(){
+PartBuilder.buildRelays = function buildRelays(){
 
 
-    const relays = this.script.relays2;
+    const relays = this.script.relays;
     this.relays = {};
 
     for(const name in relays) {
@@ -226,103 +226,6 @@ PartBuilder.buildRelays2 = function buildRelays2(){
     }
 
 };
-
-PartBuilder.buildRelays = function buildRelays(){
-
-    const scope = this.scope;
-    const relays = this.script.relays;
-    const len = relays.length;
-
-    for(let i = 0; i < len; ++i){
-
-        const def = relays[i];
-
-        const actionProp = def.action;
-        const stateProp = def.state;
-
-        let actionName = null;
-        let stateName = null;
-
-        if(actionProp)
-            actionName = (actionProp[0] !== '$') ? '$' + actionProp : actionProp;
-
-        if(stateProp)
-            stateName = (stateProp[0] === '$') ? stateProp.substr(1) : stateProp;
-
-        if(actionName)
-            scope.demand(actionName);
-
-        if(stateName)
-            scope.demand(stateName);
-
-    }
-
-    this.scope.bus().context(this).meow('props * connectRelays').pull();
-
-};
-
-PartBuilder.connectRelays = function connectRelays(props){
-
-    const scope = this.scope;
-    const relays = this.script.relays;
-    const len = relays.length;
-
-    // need to track and destroy on change
-
-    for(let i = 0; i < len; ++i){
-
-        const def = relays[i];
-
-        const actionProp = def.action;
-        const stateProp = def.state;
-
-        let actionName = null;
-        let stateName = null;
-
-        if(actionProp)
-            actionName = (actionProp[0] !== '$') ? '$' + actionProp : actionProp;
-
-        if(stateProp)
-            stateName = (stateProp[0] === '$') ? stateProp.substr(1) : stateProp;
-
-        const remoteActionName = actionProp && props[actionProp];
-        const remoteStateName = stateProp && props[stateProp];
-
-        let remoteAction = remoteActionName ? scope._parent.find(remoteActionName, true) : null;
-        let remoteState = remoteStateName ? scope._parent.find(remoteStateName, true) : null;
-
-        let localAction = actionName ? scope.demand(actionName) : null;
-        let localState = stateName ? scope.demand(stateName) : null;
-
-        if(actionName && !stateName && remoteAction){ // only action goes out relay
-            scope.bus().addSubscribe(actionName, localAction).write(remoteAction);
-        }
-
-        if(stateName && !actionName && remoteState){ // only state comes in relay
-            scope.bus().addSubscribe(remoteStateName, remoteState).write(localState).pull();
-        }
-
-        if(actionName && stateName){ // defines both
-            if(remoteAction && remoteState){ // wire action and state (wire together above)
-                scope.bus().addSubscribe(actionName, localAction).write(remoteAction);
-                scope.bus().addSubscribe(remoteStateName, remoteState).write(localState).pull();
-            } else if (remoteAction && !remoteState){
-                // todo assert relay has action sans state
-                throw new Error('relay has action without state');
-            } else if (remoteState && !remoteAction){
-                // assert relay has state sans action
-                throw new Error('relay has state without action');
-            } else { // neither configured, wire locally
-                // warning -- relay disconnected
-                scope.bus().addSubscribe(actionName, localAction).write(localState);
-            }
-        }
-
-
-    }
-
-};
-
 
 PartBuilder.buildActions = function buildActions(){
 

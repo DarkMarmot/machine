@@ -14,8 +14,8 @@ console.log('index mount');
         '<div class="tabs is-toggle"><ul><slot name="menu"></slot></ul></div>' +
         '<slot name="button"></slot>' +
         '<cog url="BULMA progress.js" config="_progress"></cog>' +
-        '<cog url="BULMA anchor.js" config="_anchor"></cog>' +
-        '<slot name="icon_label"></slot>' +
+        '<cog url="BULMA_ITEMS anchor.js" config="_anchor"></cog>' +
+        '<cog url="BULMA_ITEMS icon_label.js" config="meowing"></cog>' +
         '<slot name="selectable"></slot>' +
         '<cog url="BULMA tabs2.js" config="_menuConfig"></cog>' +
     '<div class="tabs is-toggle"><ul><slot name="chain"></slot></ul></div>',
@@ -27,8 +27,8 @@ console.log('index mount');
         JS: './js',
         LOVELACE: 'APP lovelace.js',
         D3: 'JS d3.min.js',
-        BULMA: 'APP bulma'
-
+        BULMA: 'APP bulma',
+        BULMA_ITEMS: 'BULMA items'
     },
 
     states: {
@@ -51,9 +51,9 @@ console.log('index mount');
 
         _menuConfig: function(){ return {
 
-                renderer: 'BULMA renderers/icon_label.js',
+                renderer: 'BULMA_ITEMS icon_label.js',
                 items: '_animals',
-                clickTo: '$animal',
+                clickTo: 'animal$',
                 activeFrom: 'animal',
                 classes: '', //'is-right is-toggle is-boxed is-large',
 
@@ -62,9 +62,9 @@ console.log('index mount');
 
         _sConfig: function(){ return {
 
-                renderer: 'BULMA renderers/icon_label.js',
+                renderer: 'BULMA_ITEMS icon_label.js',
                 items: '_animals',
-                clickTo: '$animal',
+                clickTo: 'animal$',
                 activeFrom: 'animal',
                 classes: 'is-right is-toggle is-boxed is-large',
 
@@ -94,9 +94,9 @@ console.log('index mount');
     chains: {
         chain: {
             url: 'BULMA selectable.js',
-            renderer: 'BULMA renderers/icon_label.js',
+            renderer: 'BULMA_ITEMS icon_label.js',
             source: '_animals',
-            clickTo: '$animal',
+            clickTo: 'animal$',
             activeFrom: 'animal',
             classes: 'is-left is-toggle is-boxed is-large'
         }
@@ -112,9 +112,9 @@ console.log('index mount');
 
         selectable: {
             url: 'BULMA breadcrumb2.js',
-            renderer: 'BULMA renderers/icon_label.js',
+            renderer: 'BULMA_ITEMS icon_label.js',
             items: '_animals',
-            clickTo: '$animal',
+            clickTo: 'animal$',
             activeFrom: 'animal',
             classes: 'is-right is-toggle is-boxed is-large'
         },
@@ -127,12 +127,12 @@ console.log('index mount');
         //     url: 'BULMA anchor.js',
         //     label: 'Kitten Rage!'
         // },
-        icon_label: {
-            url: 'BULMA icon_label.js',
-            config: 'meowing'
-            // icon: 'fa fa-dashboard',
-            // label: 'Go Go Bunny Rangers!'
-        }
+        // icon_label: {
+        //     url: 'BULMA renderers/icon_label.js',
+        //     config: 'meowing'
+        //     // icon: 'fa fa-dashboard',
+        //     // label: 'Go Go Bunny Rangers!'
+        // }
         // button: {url: './lever/cogs/button.js', renderer: './textButtonRenderer.js', label: 'Bunny', value: 'b',
         // clickTo: '$animal', activeFrom: 'animal'}
     }

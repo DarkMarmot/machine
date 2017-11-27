@@ -3,21 +3,21 @@ Machine.cog({
 
     display: '<slot name="renderer" ></slot>',
 
-    relays: [
-        {action: 'clickTo', state: 'activeFrom'}
-    ],
+    relays: {
+        clickTo$: '.clickTo',
+        activeFrom: '.activeFrom'
+    },
 
     actions: {
-        doClick: '| .value, .toggle, activeFrom * toClickValue > $clickTo',
+        doClick$: '| .value, .toggle, activeFrom * toClickValue > clickTo$',
     },
 
     gears: {
-        renderer: {url: 'renderer', doClick: '$doClick', active: 'active', config: 'props'}
+        renderer: {url: 'renderer', doClick: 'doClick$', active: 'active', config: 'props'}
     },
 
     calcs: {
 
-        // selectorConfig: 'props * extendConfig',
         active: '~ .value, .toggle, activeFrom * isActive',
         renderer: '.renderer * toRenderer'
 

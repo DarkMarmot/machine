@@ -36,8 +36,8 @@ Machine.init = function init(slot, url){
 
 
 const defaultMethods = ['prep','init','mount','start','unmount','destroy'];
-const defaultArrays = ['traits',  'buses', 'books', 'relays'];
-const defaultHashes = ['aliases','relays2','els', 'libs', 'states', 'actions','cogs', 'chains', 'gears', 'events'];
+const defaultArrays = ['traits',  'buses', 'books'];
+const defaultHashes = ['aliases','relays','els', 'libs', 'states', 'actions','cogs', 'chains', 'gears', 'events'];
 
 
 function createWhiteList(v){
@@ -238,7 +238,7 @@ function prepWireDefs(data){
         const val = data[name];
 
         let def;
-        let stateName = name[0] !== '$' ? name : name.substr(1);
+        let stateName = name.slice(-1) !== '$' ? name : name.slice(0,-1);
         const empty = !val;
 
         if(typeof val === 'function'){
@@ -255,7 +255,7 @@ function prepWireDefs(data){
         def.hasAccept = def.hasOwnProperty('accept');
         def.accept = def.hasAccept ? createWhiteList(def.hasAccept) : NOOP;
 
-        def.actionName = '$' + stateName;
+        def.actionName = stateName + '$';
         def.stateName = stateName;
         def.transform = def.transform || '';
 
@@ -300,7 +300,7 @@ function prepActionDefs(data){
 
         def.hasAccept = def.hasOwnProperty('accept');
         def.accept = def.hasAccept ? createWhiteList(def.hasAccept) : NOOP;
-        def.name = name[0] !== '$' ? '$' + name : name;
+        def.name = name.slice(-1) !== '$' ? name + '$' : name;
         def.to = def.to || '';
         data[name] = def;
 

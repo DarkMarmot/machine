@@ -664,10 +664,10 @@ PartBuilder.buildWires = function buildWires(){
 
 };
 
-PartBuilder.buildRelays2 = function buildRelays2(){
+PartBuilder.buildRelays = function buildRelays(){
 
 
-    const relays = this.script.relays2;
+    const relays = this.script.relays;
     this.relays = {};
 
     for(const name in relays) {
@@ -678,103 +678,6 @@ PartBuilder.buildRelays2 = function buildRelays2(){
     }
 
 };
-
-PartBuilder.buildRelays = function buildRelays(){
-
-    const scope = this.scope;
-    const relays = this.script.relays;
-    const len = relays.length;
-
-    for(let i = 0; i < len; ++i){
-
-        const def = relays[i];
-
-        const actionProp = def.action;
-        const stateProp = def.state;
-
-        let actionName = null;
-        let stateName = null;
-
-        if(actionProp)
-            actionName = (actionProp[0] !== '$') ? '$' + actionProp : actionProp;
-
-        if(stateProp)
-            stateName = (stateProp[0] === '$') ? stateProp.substr(1) : stateProp;
-
-        if(actionName)
-            scope.demand(actionName);
-
-        if(stateName)
-            scope.demand(stateName);
-
-    }
-
-    this.scope.bus().context(this).meow('props * connectRelays').pull();
-
-};
-
-PartBuilder.connectRelays = function connectRelays(props){
-
-    const scope = this.scope;
-    const relays = this.script.relays;
-    const len = relays.length;
-
-    // need to track and destroy on change
-
-    for(let i = 0; i < len; ++i){
-
-        const def = relays[i];
-
-        const actionProp = def.action;
-        const stateProp = def.state;
-
-        let actionName = null;
-        let stateName = null;
-
-        if(actionProp)
-            actionName = (actionProp[0] !== '$') ? '$' + actionProp : actionProp;
-
-        if(stateProp)
-            stateName = (stateProp[0] === '$') ? stateProp.substr(1) : stateProp;
-
-        const remoteActionName = actionProp && props[actionProp];
-        const remoteStateName = stateProp && props[stateProp];
-
-        let remoteAction = remoteActionName ? scope._parent.find(remoteActionName, true) : null;
-        let remoteState = remoteStateName ? scope._parent.find(remoteStateName, true) : null;
-
-        let localAction = actionName ? scope.demand(actionName) : null;
-        let localState = stateName ? scope.demand(stateName) : null;
-
-        if(actionName && !stateName && remoteAction){ // only action goes out relay
-            scope.bus().addSubscribe(actionName, localAction).write(remoteAction);
-        }
-
-        if(stateName && !actionName && remoteState){ // only state comes in relay
-            scope.bus().addSubscribe(remoteStateName, remoteState).write(localState).pull();
-        }
-
-        if(actionName && stateName){ // defines both
-            if(remoteAction && remoteState){ // wire action and state (wire together above)
-                scope.bus().addSubscribe(actionName, localAction).write(remoteAction);
-                scope.bus().addSubscribe(remoteStateName, remoteState).write(localState).pull();
-            } else if (remoteAction && !remoteState){
-                // todo assert relay has action sans state
-                throw new Error('relay has action without state');
-            } else if (remoteState && !remoteAction){
-                // assert relay has state sans action
-                throw new Error('relay has state without action');
-            } else { // neither configured, wire locally
-                // warning -- relay disconnected
-                scope.bus().addSubscribe(actionName, localAction).write(localState);
-            }
-        }
-
-
-    }
-
-};
-
 
 PartBuilder.buildActions = function buildActions(){
 
@@ -838,11 +741,11 @@ Trait.prototype.buildBuses = function buildBuses(){
 };
 
 function isPrivate(name){
-    return name[0] === '_'  || (isAction(name) && name[1] === '_');
+    return name.slice(0,1) === '_';
 }
 
 function isAction(name){
-    return name[0] === '$';
+    return name.slice(-1) === '$';
 }
 
 class Data {
@@ -3160,7 +3063,7 @@ class Scope{
 
     wire(stateName){
 
-        const actionName = '$' + stateName;
+        const actionName = stateName + '$';
         const state = this.demand(stateName);
         const action = this.demand(actionName);
 
@@ -4511,8 +4414,6 @@ Cog.prototype.extendConfigAndSourceToProps = PartBuilder.extendConfigAndSourceTo
 Cog.prototype.buildStates = PartBuilder.buildStates;
 Cog.prototype.buildWires = PartBuilder.buildWires;
 Cog.prototype.buildRelays = PartBuilder.buildRelays;
-Cog.prototype.buildRelays2 = PartBuilder.buildRelays2;
-Cog.prototype.connectRelays = PartBuilder.connectRelays;
 Cog.prototype.buildActions = PartBuilder.buildActions;
 Cog.prototype.output = PartBuilder.output;
 Cog.prototype.buildConfig = PartBuilder.buildConfig;
@@ -4754,7 +4655,6 @@ Cog.prototype.build = function build(){ // urls loaded
     this.buildStates();
     this.buildWires();
     this.buildRelays();
-    this.buildRelays2();
     this.buildActions();
 
 
@@ -4873,8 +4773,8 @@ Machine.init = function init(slot, url){
 
 
 const defaultMethods = ['prep','init','mount','start','unmount','destroy'];
-const defaultArrays = ['traits',  'buses', 'books', 'relays'];
-const defaultHashes = ['aliases','relays2','els', 'libs', 'states', 'actions','cogs', 'chains', 'gears', 'events'];
+const defaultArrays = ['traits',  'buses', 'books'];
+const defaultHashes = ['aliases','relays','els', 'libs', 'states', 'actions','cogs', 'chains', 'gears', 'events'];
 
 
 function createWhiteList(v){
@@ -5058,7 +4958,7 @@ function prepWireDefs(data){
         const val = data[name];
 
         let def;
-        let stateName = name[0] !== '$' ? name : name.substr(1);
+        let stateName = name.slice(-1) !== '$' ? name : name.slice(0,-1);
         const empty = !val;
 
         if(typeof val === 'function'){
@@ -5075,7 +4975,7 @@ function prepWireDefs(data){
         def.hasAccept = def.hasOwnProperty('accept');
         def.accept = def.hasAccept ? createWhiteList(def.hasAccept) : NOOP;
 
-        def.actionName = '$' + stateName;
+        def.actionName = stateName + '$';
         def.stateName = stateName;
         def.transform = def.transform || '';
 
@@ -5120,7 +5020,7 @@ function prepActionDefs(data){
 
         def.hasAccept = def.hasOwnProperty('accept');
         def.accept = def.hasAccept ? createWhiteList(def.hasAccept) : NOOP;
-        def.name = name[0] !== '$' ? '$' + name : name;
+        def.name = name.slice(-1) !== '$' ? name + '$' : name;
         def.to = def.to || '';
         data[name] = def;
 

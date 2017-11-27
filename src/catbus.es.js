@@ -1,9 +1,9 @@
 function isPrivate(name){
-    return name[0] === '_'  || (isAction(name) && name[1] === '_');
+    return name.slice(0,1) === '_';
 }
 
 function isAction(name){
-    return name[0] === '$';
+    return name.slice(-1) === '$';
 }
 
 class Data {
@@ -2321,7 +2321,7 @@ class Scope{
 
     wire(stateName){
 
-        const actionName = '$' + stateName;
+        const actionName = stateName + '$';
         const state = this.demand(stateName);
         const action = this.demand(actionName);
 
