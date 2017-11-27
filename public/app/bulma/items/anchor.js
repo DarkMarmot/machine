@@ -4,12 +4,12 @@ Machine.cog({
     display: '<a name="anchor"></a>',
 
     buses: [
-        'props * render'
+        '.label * render'
     ],
 
-    render: function(props){
+    render: function(label){
 
-        this.dom.anchor.text(props.label);
+        this.dom.anchor.text(label);
 
     }
 

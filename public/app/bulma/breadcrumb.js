@@ -2,7 +2,7 @@
 Machine.cog({
 
     display: '<div name="breadcrumb"><ul>' +
-    '<chain url="BULMA selectable.js" config="props" source="items"></chain>' +
+    '<slot name="list_items" config="props" source="items"></slot>' +
     '</ul></div>',
 
     relays: {
@@ -17,6 +17,10 @@ Machine.cog({
 
         this.dom.breadcrumb.setClasses('breadcrumb ' + (classes || ''));
 
+    },
+
+    chains: {
+        list_items: {url:'BULMA list_item.js', active: 'active', config:'props', source:'items'}
     }
 
 });

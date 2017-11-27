@@ -1,19 +1,24 @@
 
 Machine.cog({
 
-    display: '<slot name="renderer" ></slot>',
+    display: '<li name="item"><gear url="renderer" config="props"></gear></li>',
+
+    buses: [
+        'active * renderActive'
+    ],
 
     relays: {
         clickTo$: '.clickTo',
         activeFrom: '.activeFrom'
     },
 
-    actions: {
-        doClick$: '| .value, .toggle, activeFrom * toClickValue > clickTo$',
+    events: {
+        item: '@ click * preventDefault | .value, .toggle, activeFrom * toClickValue > clickTo$',
     },
 
-    gears: {
-        renderer: {url: 'renderer', doClick: 'doClick$', active: 'active', config: 'props'}
+    preventDefault: function(e){
+        e.preventDefault();
+        return e;
     },
 
     calcs: {
@@ -22,7 +27,6 @@ Machine.cog({
         renderer: '.renderer * toRenderer'
 
     },
-
 
     toRenderer: function(renderer){
 
@@ -48,7 +52,16 @@ Machine.cog({
 
         return msg.value === currentValue;
 
+    },
+
+    renderActive: function(active){
+
+        this.dom.item.toggleClasses({
+            'is-active': active
+        });
+
     }
+
 
 
 });

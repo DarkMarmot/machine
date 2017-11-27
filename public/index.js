@@ -11,15 +11,17 @@ console.log('index mount');
             'Welcome to the Machine' +
         '</div>' +
         '<cog url="LOVELACE"></cog>' +
-        '<div class="tabs is-toggle"><ul><slot name="menu"></slot></ul></div>' +
+        // '<div class="tabs is-toggle"><ul><slot name="menu"></slot></ul></div>' +
         '<slot name="button"></slot>' +
         '<cog url="BULMA progress.js" config="_progress"></cog>' +
-        '<cog url="BULMA_ITEMS anchor.js" config="_anchor"></cog>' +
-        '<cog url="BULMA_ITEMS icon_label.js" config="meowing"></cog>' +
+        // '<cog url="BULMA_ITEMS anchor.js" config="_anchor"></cog>' +
+        // '<cog url="BULMA_ITEMS icon_label.js" config="meowing"></cog>' +
         '<slot name="selectable"></slot>' +
-        '<cog url="BULMA tabs2.js" config="_menuConfig"></cog>' +
-    '<div class="tabs is-toggle"><ul><slot name="chain"></slot></ul></div>',
-
+        '<cog url="BULMA tabs.js" config="_tabsConfig"></cog>' +
+        '<cog url="BULMA breadcrumb.js" config="_breadcrumbConfig"></cog>'
+        // '<cog url="BULMA list.js" config="_breadcrumbConfig"></cog>'
+    // '<div class="tabs is-toggle"><ul><slot name="chain"></slot></ul></div>',
+,
 
     aliases: {
 
@@ -49,23 +51,25 @@ console.log('index mount');
                 {label: 'bunny', value: 'b', icon: 'fa fa-space-shuttle'}
             ];},
 
-        _menuConfig: function(){ return {
+        _breadcrumbConfig: function(){ return {
 
                 renderer: 'BULMA_ITEMS icon_label.js',
                 items: '_animals',
                 clickTo: 'animal$',
                 activeFrom: 'animal',
-                classes: '', //'is-right is-toggle is-boxed is-large',
+                active: 'active',
+                classes: '',
 
             }
         },
 
-        _sConfig: function(){ return {
+        _tabsConfig: function(){ return {
 
                 renderer: 'BULMA_ITEMS icon_label.js',
                 items: '_animals',
                 clickTo: 'animal$',
                 activeFrom: 'animal',
+                active: 'active',
                 classes: 'is-right is-toggle is-boxed is-large',
 
             }
@@ -91,16 +95,17 @@ console.log('index mount');
         d3: 'D3'
     },
 
-    chains: {
-        chain: {
-            url: 'BULMA selectable.js',
-            renderer: 'BULMA_ITEMS icon_label.js',
-            source: '_animals',
-            clickTo: 'animal$',
-            activeFrom: 'animal',
-            classes: 'is-left is-toggle is-boxed is-large'
-        }
-    },
+    // chains: {
+    //     chain: {
+    //         url: 'BULMA selectable.js',
+    //         renderer: 'BULMA_ITEMS icon_label.js',
+    //         source: '_animals',
+    //         clickTo: 'animal$',
+    //         activeFrom: 'animal',
+    //         active: 'active',
+    //         classes: 'is-left is-toggle is-boxed is-large'
+    //     }
+    // },
 
     cogs: {
         // babbage: 'LOVELACE',
@@ -111,12 +116,13 @@ console.log('index mount');
         // },
 
         selectable: {
-            url: 'BULMA breadcrumb2.js',
+            url: 'BULMA tabs.js',
             renderer: 'BULMA_ITEMS icon_label.js',
             items: '_animals',
             clickTo: 'animal$',
             activeFrom: 'animal',
-            classes: 'is-right is-toggle is-boxed is-large'
+            active: 'active',
+            classes: 'is-large'
         },
 
         // progress: {

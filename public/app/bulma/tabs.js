@@ -2,12 +2,8 @@
 Machine.cog({
 
     display: '<div name="tabs"><ul>' +
-    '<chain url="BULMA selectable.js" config="props" source="items"></chain>' +
+    '<chain url="BULMA list_item.js" config="props" source="items"></chain>' +
     '</ul></div>',
-
-    // relays: [
-    //     {state: 'items'}
-    // ],
 
     relays: {
         items: '.items'
