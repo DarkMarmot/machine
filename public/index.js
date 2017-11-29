@@ -7,18 +7,19 @@ console.log('index mount');
 
     display:
 
-        '<div>' +
-            'Welcome to the Machine' +
-        '</div>' +
-        '<cog url="LOVELACE"></cog>' +
-        // '<div class="tabs is-toggle"><ul><slot name="menu"></slot></ul></div>' +
-        '<slot name="button"></slot>' +
+        // '<div>' +
+        //     'Welcome to the Machine' +
+        // '</div>' +
+        // '<cog url="LOVELACE"></cog>' +
+        // // '<div class="tabs is-toggle"><ul><slot name="menu"></slot></ul></div>' +
+        // '<slot name="button"></slot>' +
         '<cog url="BULMA progress.js" config="_progress"></cog>' +
-        // '<cog url="BULMA_ITEMS anchor.js" config="_anchor"></cog>' +
+        // // '<cog url="BULMA_ITEMS anchor.js" config="_anchor"></cog>' +
         // '<cog url="BULMA_ITEMS icon_label.js" config="meowing"></cog>' +
         '<slot name="selectable"></slot>' +
-        '<cog url="BULMA tabs.js" config="_tabsConfig"></cog>' +
-        '<cog url="BULMA breadcrumb.js" config="_breadcrumbConfig"></cog>'
+        // '<cog url="BULMA tabs.js" config="_tabsConfig"></cog>' +
+        '<cog url="BULMA breadcrumb.js" config="_breadcrumbConfig"></cog>' +
+    '<slot name="grid"></slot>'
         // '<cog url="BULMA list.js" config="_breadcrumbConfig"></cog>'
     // '<div class="tabs is-toggle"><ul><slot name="chain"></slot></ul></div>',
 ,
@@ -26,6 +27,7 @@ console.log('index mount');
     aliases: {
 
         APP: './app',
+        REM: 'APP rem',
         JS: './js',
         LOVELACE: 'APP lovelace.js',
         D3: 'JS d3.min.js',
@@ -69,11 +71,24 @@ console.log('index mount');
                 items: '_animals',
                 clickTo: 'animal$',
                 activeFrom: 'animal',
-                active: 'active',
                 classes: 'is-right is-toggle is-boxed is-large',
 
             }
         },
+
+        _gridConfig: function(){ return {
+
+                records: '_animals',
+                columns: '_gridColumns'
+
+            }
+        },
+
+        _gridColumns: function(){ return [{field: 'label', renderer: 'REM text.js'},
+            {field: 'icon', renderer: 'REM text.js'},
+            {field: 'value', renderer: 'REM text.js'}]
+        },
+
 
         meowing: function(){
             return {
@@ -115,14 +130,20 @@ console.log('index mount');
         //     config: '_menuConfig'
         // },
 
+        grid: {
+
+            url: 'REM grid.js',
+            config: '_gridConfig'
+
+        },
         selectable: {
             url: 'BULMA tabs.js',
             renderer: 'BULMA_ITEMS icon_label.js',
             items: '_animals',
             clickTo: 'animal$',
             activeFrom: 'animal',
-            active: 'active',
-            classes: 'is-large'
+            classes: 'is-large',
+            // config: 'meow'
         },
 
         // progress: {

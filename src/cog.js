@@ -80,15 +80,15 @@ Cog.prototype.mountDisplay = function() {
         const el = named[i];
         const name = el.getAttribute('name');
         const tag = el.tagName;
-         if(validTags[tag]){
-        //     console.log('tag is:', tag);
-        // if(tag === 'SLOT'){
-            this.namedSlots[name] = el;
-        } else {
+        //  if(validTags[tag]){
+        // //     console.log('tag is:', tag);
+        // // if(tag === 'SLOT'){
+        //     this.namedSlots[name] = el;
+        // } else {
             hash[name] = el;
             scriptEls[name] = el;
             scriptDom[name] = new AlterDom(el);
-        }
+        // }
     }
 
     this.elements = [].slice.call(frag.childNodes, 0);
@@ -322,7 +322,7 @@ Cog.prototype.buildCogs = function buildCogs(){
         const def = cogs[slotName] || null;
         //AliasContext.applySplitUrl(def);
 
-        const slot = this.namedSlots[slotName];
+        const slot = this.namedElements[slotName];
         let cog;
 
         if(def.type === 'gear') {
@@ -361,7 +361,7 @@ Cog.prototype.buildGears = function buildGears(){
 
         const def = gears[slotName];
 
-        const slot = this.namedSlots[slotName];
+        const slot = this.namedElements[slotName];
         const gear = new Gear(def.url, slot, this, def);
 
         children.push(gear);
@@ -393,7 +393,7 @@ Cog.prototype.buildChains = function buildChains(){
         const def = chains[slotName];
         //AliasContext.applySplitUrl(def);
 
-        const slot = this.namedSlots[slotName];
+        const slot = this.namedElements[slotName];
 
         const url = aliasContext.resolveUrl(def.url, def.root);
         const chain = new Chain(url, slot, this, def, def.source);

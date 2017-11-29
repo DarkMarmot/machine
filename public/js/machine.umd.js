@@ -3919,14 +3919,7 @@ Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
         c.props.write(d);
     }
 
-    if(len === 0 && childCount > 0){
 
-        // restore placeholder as all children will be gone
-        const el = this.getFirstElement(); // grab first child element
-        this.placeholder = Placeholder.take();
-        el.parentNode.insertBefore(this.placeholder, el);
-
-    }
 
     if(childCount < len) { // create new children
 
@@ -3959,6 +3952,17 @@ Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
             children[i].destroy();
             children.splice(i, 1);
         }
+    }
+
+    if(len === 0 && childCount > 0){
+
+        // restore placeholder as all children will be gone
+        const el = this.getFirstElement(); // grab first child element
+        this.placeholder = Placeholder.take();
+        el.parentNode.insertBefore(this.placeholder, el);
+
+    } else {
+        this.killPlaceholder();
     }
 
     this.tail = children.length > 0 ? children[children.length - 1] : null;
@@ -4175,8 +4179,6 @@ AlterDom.prototype.styles = function(changes) {
 
 let _id = 0;
 
-const validTags = {COG: true, CHAIN: true, GEAR: true, SLOT: true};
-
 function Cog(url, slot, parent, def, key){
 
     def = def || {};
@@ -4242,15 +4244,15 @@ Cog.prototype.mountDisplay = function() {
         const el = named[i];
         const name = el.getAttribute('name');
         const tag = el.tagName;
-         if(validTags[tag]){
-        //     console.log('tag is:', tag);
-        // if(tag === 'SLOT'){
-            this.namedSlots[name] = el;
-        } else {
+        //  if(validTags[tag]){
+        // //     console.log('tag is:', tag);
+        // // if(tag === 'SLOT'){
+        //     this.namedSlots[name] = el;
+        // } else {
             hash[name] = el;
             scriptEls[name] = el;
             scriptDom[name] = new AlterDom(el);
-        }
+        // }
     }
 
     this.elements = [].slice.call(frag.childNodes, 0);
@@ -4484,7 +4486,7 @@ Cog.prototype.buildCogs = function buildCogs(){
         const def = cogs[slotName] || null;
         //AliasContext.applySplitUrl(def);
 
-        const slot = this.namedSlots[slotName];
+        const slot = this.namedElements[slotName];
         let cog;
 
         if(def.type === 'gear') {
@@ -4523,7 +4525,7 @@ Cog.prototype.buildGears = function buildGears(){
 
         const def = gears[slotName];
 
-        const slot = this.namedSlots[slotName];
+        const slot = this.namedElements[slotName];
         const gear = new Gear(def.url, slot, this, def);
 
         children.push(gear);
@@ -4555,7 +4557,7 @@ Cog.prototype.buildChains = function buildChains(){
         const def = chains[slotName];
         //AliasContext.applySplitUrl(def);
 
-        const slot = this.namedSlots[slotName];
+        const slot = this.namedElements[slotName];
 
         const url = aliasContext.resolveUrl(def.url, def.root);
         const chain = new Chain(url, slot, this, def, def.source);
@@ -4796,11 +4798,19 @@ function prepDisplay(def) {
     if(!def.display) // check for valid html node
         return;
 
-    let frag = document
-        .createRange()
-        .createContextualFragment(def.display);
+    // let frag = document
+    //     .createRange()
+    //     .createContextualFragment(def.display);
 
-    def.__frag = frag;
+    function fragmentFromString(strHTML) {
+        var temp = document.createElement('template');
+        temp.innerHTML = strHTML;
+        return temp.content;
+    }
+
+
+
+    let frag = def.__frag = fragmentFromString(def.display);
 
     const els = frag.querySelectorAll('chain,cog,gear');
     const len = els.length;

@@ -20,7 +20,7 @@ Machine.cog({
     },
 
     chains: {
-        list_items: {url:'BULMA list_item.js', active: 'active', config:'props', source:'items'}
+        list_items: {url:'BULMA list_item.js', config:'props', source:'items'}
     }
 
 });

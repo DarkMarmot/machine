@@ -17,7 +17,6 @@ function Chain(url, slot, parent, def, sourceName, keyField){
     this.id = ++_id;
     this.head = null;
     this.placeholder = slot;
-
     this.elements = [];
     this.namedElements = {};
     this.children = [];
@@ -267,14 +266,7 @@ Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
         c.props.write(d);
     }
 
-    if(len === 0 && childCount > 0){
 
-        // restore placeholder as all children will be gone
-        const el = this.getFirstElement(); // grab first child element
-        this.placeholder = Placeholder.take();
-        el.parentNode.insertBefore(this.placeholder, el);
-
-    }
 
     if(childCount < len) { // create new children
 
@@ -307,6 +299,17 @@ Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
             children[i].destroy();
             children.splice(i, 1);
         }
+    }
+
+    if(len === 0 && childCount > 0){
+
+        // restore placeholder as all children will be gone
+        const el = this.getFirstElement(); // grab first child element
+        this.placeholder = Placeholder.take();
+        el.parentNode.insertBefore(this.placeholder, el);
+
+    } else {
+        this.killPlaceholder();
     }
 
     this.tail = children.length > 0 ? children[children.length - 1] : null;

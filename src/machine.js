@@ -59,11 +59,19 @@ function prepDisplay(def) {
     if(!def.display) // check for valid html node
         return;
 
-    let frag = document
-        .createRange()
-        .createContextualFragment(def.display);
+    // let frag = document
+    //     .createRange()
+    //     .createContextualFragment(def.display);
 
-    def.__frag = frag;
+    function fragmentFromString(strHTML) {
+        var temp = document.createElement('template');
+        temp.innerHTML = strHTML;
+        return temp.content;
+    }
+
+
+
+    let frag = def.__frag = fragmentFromString(def.display);
 
     const els = frag.querySelectorAll('chain,cog,gear');
     const len = els.length;
