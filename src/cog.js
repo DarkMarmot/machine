@@ -2,7 +2,6 @@
 import AliasContext from './aliasContext.js';
 import ScriptMonitor from './scriptMonitor.js';
 import ScriptLoader from './scriptLoader.js';
-import Trait from './trait.js';
 import Catbus from './catbus.es.js';
 import Gear from './gear.js';
 import Chain from './chain.js';
@@ -48,14 +47,6 @@ function Cog(url, slot, parent, def, key){
     this.scriptMonitor = null;
     this.aliasValveMap = null;
     this.aliasContext = null;
-
-    this.bookUrls = null;
-    //this.traitUrls = null;
-
-    //this.traitInstances = [];
-    this.busInstances = [];
-
-
 
     this.load();
 
@@ -147,52 +138,6 @@ Cog.prototype.prep = function(){
     this.loadLibs();
 
 };
-
-
-
-// Cog.prototype.loadBooks = function loadBooks(){
-//
-//     if(this.script.books.length === 0) {
-//         this.loadLibs();
-//         return;
-//     }
-//
-//     const urls = this.bookUrls = this.aliasContext.freshUrls(this.script.books);
-//
-//     if (urls.length) {
-//         this.scriptMonitor = new ScriptMonitor(urls, this.readBooks.bind(this));
-//     } else {
-//         this.readBooks();
-//     }
-//
-//
-//
-// };
-
-
-
-
-// Cog.prototype.readBooks = function readBooks() {
-//
-//     const urls = this.script.books;
-//
-//     if(this.aliasContext.shared) // need a new context
-//         this.aliasContext = this.aliasContext.clone();
-//
-//     for (let i = 0; i < urls.length; ++i) {
-//
-//         const url = urls[i];
-//         const book = ScriptLoader.read(url);
-//         if(book.type !== 'book')
-//             console.log('EXPECTED BOOK: got ', book.type, book.url);
-//
-//         this.aliasContext.injectAliasList(book.alias);
-//
-//     }
-//
-//     this.loadLibs();
-//
-// };
 
 
 Cog.prototype.loadLibs = function loadLibs(){
@@ -291,14 +236,12 @@ Cog.prototype.buildBuses = function buildBuses(){
     const scope = this.scope;
 
     const len = buses.length;
-    const instances = this.busInstances;
 
     for(let i = 0; i < len; ++i){
 
         const def = buses[i];
         const bus = scope.bus().context(this.script).meow(def); // todo add function support not just meow str
         bus.pull();
-        instances.push(bus);
 
     }
 
@@ -405,7 +348,6 @@ Cog.prototype.buildChains = function buildChains(){
     for(const slotName in chains){
 
         const def = chains[slotName];
-        //AliasContext.applySplitUrl(def);
 
         const slot = this.namedElements[slotName];
 
@@ -439,57 +381,9 @@ Cog.prototype.getNamedElement = function getNamedElement(name){
     return el;
 
 };
-//
-// Cog.prototype.buildTraits = function buildTraits(){
-//
-//     const traits = this.script.traits;
-//     const instances = this.traitInstances;
-//
-//     const len = traits.length;
-//     for(let i = 0; i < len; ++i){
-//
-//         const def = traits[i]; // todo url and base instead of url/root?
-//         const instance = new Trait(this, def);
-//         instances.push(instance);
-//         instance.script.prep();
-//
-//     }
-//
-// };
 
 
-// Cog.prototype.initTraits = function initTraits(){
-//
-//     const traits = this.traitInstances;
-//     const len = traits.length;
-//     for(let i = 0; i < len; ++i){
-//         const script = traits[i].script;
-//         script.init();
-//     }
-//
-// };
 
-// Cog.prototype.mountTraits = function mountTraits(){
-//
-//     const traits = this.traitInstances;
-//     const len = traits.length;
-//     for(let i = 0; i < len; ++i){
-//         const script = traits[i].script;
-//         script.mount();
-//     }
-//
-// };
-
-// Cog.prototype.startTraits = function startTraits(){
-//
-//     const traits = this.traitInstances;
-//     const len = traits.length;
-//     for(let i = 0; i < len; ++i){
-//         const script = traits[i].script;
-//         script.start();
-//     }
-//
-// };
 
 Cog.prototype.build = function build(){ // urls loaded
 
@@ -497,8 +391,6 @@ Cog.prototype.build = function build(){ // urls loaded
 
     // todo make relays dynamic to config/source changes
     // currently: hack on first data
-
-    const scope = this.scope;
 
     console.log(this.url,this.config);
 
@@ -510,13 +402,9 @@ Cog.prototype.build = function build(){ // urls loaded
     this.buildRelays();
     this.buildActions();
 
-
     // todo possibly init/refresh states and wires here?
 
     this.script.init();
-
-    // this.buildTraits(); // calls prep on all traits -- mixes states, actions, etc
-    // this.initTraits(); // calls init on all traits
 
     this.buildBuses();
     this.buildEvents();
@@ -558,14 +446,12 @@ Cog.prototype.mount = function mount(){
 
     this.mountDisplay();
     this.script.mount();
-    //this.mountTraits();
 
 };
 
 Cog.prototype.start = function start(){
 
     this.script.start();
-   // this.startTraits();
 
 };
 

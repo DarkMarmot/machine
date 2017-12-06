@@ -36,7 +36,9 @@ console.log('index mount');
         BULMA: 'APP bulma',
         BULMA_ITEMS: 'BULMA items',
         TRAIT: 'APP traits',
-        AUTH_API: 'http://apiv3.iucnredlist.org/api/v3/version'
+        // AUTH_API: 'http://apiv3.iucnredlist.org/api/v3/version'
+        AUTH_API: './api/topology.json'
+
     },
 
     actions: {

@@ -415,293 +415,6 @@ function copy(source, target){
 
 }
 
-function Relay(cog, name, remote){
-
-
-    this.cog = cog;
-    this.name = name;
-    this.remote = remote;
-    this.localData = cog.scope.demand(name);
-    this.isAction = name.slice(-1) === '$';
-    this.valueBus = null;
-    this.nameBus = cog.scope.bus()
-        .context(cog.script)
-        .meow(remote)
-        .msg(this.connect, this).pull();
-
-
-}
-
-Relay.prototype.connect = function(remoteName){
-
-    if(this.valueBus)
-        this.valueBus.destroy();
-
-    if(typeof remoteName !== 'string')
-        return; // todo throw warning or error?
-
-    // remoteName must be data name at parent scope!
-    const remoteData = this.cog.parent.scope.find(remoteName, true);
-
-    if(this.isAction) {
-        this.valueBus = this.cog.scope.bus()
-            .addSubscribe(this.name, this.localData).write(remoteData);
-    } else {
-        this.valueBus = this.cog.scope.bus()
-            .addSubscribe(remoteData.name, remoteData).write(this.localData).pull();
-    }
-
-};
-
-const PartBuilder = {};
-
-
-// this.source = scope.demand('__source');
-// if(data)
-//     this.source.write(data);
-
-function copyWithoutUrlOrConfig(props){
-    const result = {};
-    for(const k in props){
-        if(k !== 'url' && k !== 'config'){
-            result[k] = props[k];
-        }
-    }
-    return result;
-}
-
-PartBuilder.defineProps = function(def){ // for gears and cogs
-
-    const scope = this.scope;
-    this.props = scope.demand('props');
-
-    const defConfig = def.config;
-    const finalDef = copyWithoutUrlOrConfig(def);
-
-    if(defConfig && typeof defConfig === 'string'){ // subscribe to named config, overriding def
-        const namedConfigData = this.parent.scope.find(defConfig, true);
-        scope.bus().context(this)
-            .addSubscribe('config', namedConfigData)
-            .msg(this.extendDefToConfig)
-            .write(this.props).pull();
-    } else {
-        // props doesn't subscribe to a dynamic config point
-        this.props.write(finalDef);
-    }
-
-    // scope.bus().context(this)
-    //     .meow('~ config, __source * extendConfigAndSourceToProps > props')
-    //     .pull();
-
-};
-
-
-const urlOrConfigHash = {url: true, config: true};
-
-
-
-// override def sans url and config with config hash
-PartBuilder.extendDefToConfig = function(config){
-
-    const def = this.def;
-    const result = {};
-
-    for(const k in def){
-        if(!urlOrConfigHash.hasOwnProperty(k)){
-            result[k] = def[k];
-        }
-    }
-
-    for(const k in config){
-        result[k] = config[k];
-    }
-
-    return result;
-
-};
-
-
-
-// override config sans source and config with config hash
-PartBuilder.extendConfigAndSourceToProps = function(msg){
-
-    const source = msg.__source;
-    const config = msg.config;
-    const result = {};
-
-    // const parentIsChain = this.parent && this.parent.type === 'chain';
-    for(const k in config){
-        if(k !== 'source'){
-            result[k] = config[k];
-        }
-    }
-
-    if(source && typeof source === 'object') {
-        for (const k in source) {
-            result[k] = source[k];
-        }
-    }
-
-    return result;
-
-};
-
-PartBuilder.buildConfig = function buildConfig(def){
-
-    if(!def && !this.parent) // empty root config
-        def = {};
-
-    let baseConfig = {};
-
-    if(def){
-
-        const defConfig = def.config;
-        if(defConfig){
-
-            let inheritConfig;
-
-            if(typeof defConfig === 'string'){
-                inheritConfig = this.parent.scope.find(defConfig).read();
-            } else if (typeof defConfig === 'object'){
-                inheritConfig = defConfig;
-            }
-
-            for(const name in inheritConfig){
-                baseConfig[name] = inheritConfig[name];
-            }
-
-        }
-
-        for(const name in def){
-            if(name !== 'config')
-                baseConfig[name] = def[name];
-        }
-
-        this.scope.demand('config').write(baseConfig);
-
-    }
-
-    this.config = this.scope.find('config').read();
-
-};
-
-
-
-PartBuilder.output = function output(name, value){
-
-    const d = this.scope.find(name);
-    d.write(value);
-
-};
-
-PartBuilder.buildStates = function buildStates(){
-
-    const script = this.script;
-    const scope  = this.scope;
-    const states = script.states;
-
-    for(const name in states){
-
-        const def = states[name];
-        const state = scope.demand(name);
-
-        if(def.hasValue) {
-
-            const value = typeof def.value === 'function'
-                ? def.value.call(script)
-                : def.value;
-
-            state.write(value, true);
-        }
-
-    }
-
-    for(const name in states){
-
-        const state = scope.grab(name);
-        state.refresh();
-
-    }
-
-};
-
-
-PartBuilder.buildWires = function buildWires(){
-
-    const wires = this.script.wires;
-    const scope = this.scope;
-    const script = this.script;
-
-    // todo add initial state values
-
-    for(const name in wires) {
-
-        const def = wires[name];
-        const state = scope.demand(def.stateName);
-        const action = scope.demand(def.actionName);
-
-        if(def.hasValue) {
-
-            const value = typeof def.value === 'function'
-                ? def.value.call(script)
-                : def.value;
-
-            state.write(value, true);
-        }
-
-        const meow = def.actionName + def.transform + ' > ' + def.stateName; // todo assert def has cmd at start
-        scope.bus().context(script).meow(meow);
-
-    }
-
-    for(const name in wires){
-
-        const def = wires[name];
-        const state = scope.grab(def.stateName);
-        state.refresh();
-
-    }
-
-};
-
-PartBuilder.buildRelays = function buildRelays(){
-
-
-    const relays = this.script.relays;
-    this.relays = {};
-
-    for(const name in relays) {
-
-        const remote = relays[name];
-        this.relays[name] = new Relay(this, name, remote);
-
-    }
-
-};
-
-PartBuilder.buildActions = function buildActions(){
-
-    const actions = this.script.actions;
-    const scope = this.scope;
-
-    for(const name in actions){
-
-        const def = actions[name]; // name in hash might not have leading $
-        this.scope.demand(def.name); // name in def always has leading $
-
-        if(def.to){
-            const meow = def.name + def.to; // todo assert def has cmd at start
-            scope.bus().context(this.script).meow(meow);
-        }
-    }
-
-};
-
-//
-// Trait.prototype.buildBusFromNyan = function buildBusFromNyan(nyanStr, el){
-//     return this.scope.bus(nyanStr, this.script, el);
-// };
-
 function isPrivate(name){
     return name.slice(0,1) === '_';
 }
@@ -3496,6 +3209,288 @@ Placeholder.give = function(el){
 
 };
 
+function Relay(cog, name, remote){
+
+
+    this.cog = cog;
+    this.name = name;
+    this.remote = remote;
+    this.localData = cog.scope.demand(name);
+    this.isAction = name.slice(-1) === '$';
+    this.valueBus = null;
+    this.nameBus = cog.scope.bus()
+        .context(cog.script)
+        .meow(remote)
+        .msg(this.connect, this).pull();
+
+
+}
+
+Relay.prototype.connect = function(remoteName){
+
+    if(this.valueBus)
+        this.valueBus.destroy();
+
+    if(typeof remoteName !== 'string')
+        return; // todo throw warning or error?
+
+    // remoteName must be data name at parent scope!
+    const remoteData = this.cog.parent.scope.find(remoteName, true);
+
+    if(this.isAction) {
+        this.valueBus = this.cog.scope.bus()
+            .addSubscribe(this.name, this.localData).write(remoteData);
+    } else {
+        this.valueBus = this.cog.scope.bus()
+            .addSubscribe(remoteData.name, remoteData).write(this.localData).pull();
+    }
+
+};
+
+const PartBuilder = {};
+
+
+// this.source = scope.demand('__source');
+// if(data)
+//     this.source.write(data);
+
+function copyWithoutUrlOrConfig(props){
+    const result = {};
+    for(const k in props){
+        if(k !== 'url' && k !== 'config'){
+            result[k] = props[k];
+        }
+    }
+    return result;
+}
+
+PartBuilder.defineProps = function(def){ // for gears and cogs
+
+    const scope = this.scope;
+    this.props = scope.demand('props');
+
+    const defConfig = def.config;
+    const finalDef = copyWithoutUrlOrConfig(def);
+
+    if(defConfig && typeof defConfig === 'string'){ // subscribe to named config, overriding def
+        const namedConfigData = this.parent.scope.find(defConfig, true);
+        scope.bus().context(this)
+            .addSubscribe('config', namedConfigData)
+            .msg(this.extendDefToConfig)
+            .write(this.props).pull();
+    } else {
+        // props doesn't subscribe to a dynamic config point
+        this.props.write(finalDef);
+    }
+
+    // scope.bus().context(this)
+    //     .meow('~ config, __source * extendConfigAndSourceToProps > props')
+    //     .pull();
+
+};
+
+
+const urlOrConfigHash = {url: true, config: true};
+
+
+
+// override def sans url and config with config hash
+PartBuilder.extendDefToConfig = function(config){
+
+    const def = this.def;
+    const result = {};
+
+    for(const k in def){
+        if(!urlOrConfigHash.hasOwnProperty(k)){
+            result[k] = def[k];
+        }
+    }
+
+    for(const k in config){
+        result[k] = config[k];
+    }
+
+    return result;
+
+};
+
+
+
+// override config sans source and config with config hash
+PartBuilder.extendConfigAndSourceToProps = function(msg){
+
+    const source = msg.__source;
+    const config = msg.config;
+    const result = {};
+
+    // const parentIsChain = this.parent && this.parent.type === 'chain';
+    for(const k in config){
+        if(k !== 'source'){
+            result[k] = config[k];
+        }
+    }
+
+    if(source && typeof source === 'object') {
+        for (const k in source) {
+            result[k] = source[k];
+        }
+    }
+
+    return result;
+
+};
+
+PartBuilder.buildConfig = function buildConfig(def){
+
+    if(!def && !this.parent) // empty root config
+        def = {};
+
+    let baseConfig = {};
+
+    if(def){
+
+        const defConfig = def.config;
+        if(defConfig){
+
+            let inheritConfig;
+
+            if(typeof defConfig === 'string'){
+                inheritConfig = this.parent.scope.find(defConfig).read();
+            } else if (typeof defConfig === 'object'){
+                inheritConfig = defConfig;
+            }
+
+            for(const name in inheritConfig){
+                baseConfig[name] = inheritConfig[name];
+            }
+
+        }
+
+        for(const name in def){
+            if(name !== 'config')
+                baseConfig[name] = def[name];
+        }
+
+        this.scope.demand('config').write(baseConfig);
+
+    }
+
+    this.config = this.scope.find('config').read();
+
+};
+
+
+
+PartBuilder.output = function output(name, value){
+
+    const d = this.scope.find(name);
+    d.write(value);
+
+};
+
+PartBuilder.buildStates = function buildStates(){
+
+    const script = this.script;
+    const scope  = this.scope;
+    const states = script.states;
+
+    for(const name in states){
+
+        const def = states[name];
+        const state = scope.demand(name);
+
+        if(def.hasValue) {
+
+            const value = typeof def.value === 'function'
+                ? def.value.call(script)
+                : def.value;
+
+            state.write(value, true);
+        }
+
+    }
+
+    for(const name in states){
+
+        const state = scope.grab(name);
+        state.refresh();
+
+    }
+
+};
+
+
+PartBuilder.buildWires = function buildWires(){
+
+    const wires = this.script.wires;
+    const scope = this.scope;
+    const script = this.script;
+
+    // todo add initial state values
+
+    for(const name in wires) {
+
+        const def = wires[name];
+        const state = scope.demand(def.stateName);
+        const action = scope.demand(def.actionName);
+
+        if(def.hasValue) {
+
+            const value = typeof def.value === 'function'
+                ? def.value.call(script)
+                : def.value;
+
+            state.write(value, true);
+        }
+
+        const meow = def.actionName + def.transform + ' > ' + def.stateName; // todo assert def has cmd at start
+        scope.bus().context(script).meow(meow);
+
+    }
+
+    for(const name in wires){
+
+        const def = wires[name];
+        const state = scope.grab(def.stateName);
+        state.refresh();
+
+    }
+
+};
+
+PartBuilder.buildRelays = function buildRelays(){
+
+
+    const relays = this.script.relays;
+    this.relays = {};
+
+    for(const name in relays) {
+
+        const remote = relays[name];
+        this.relays[name] = new Relay(this, name, remote);
+
+    }
+
+};
+
+PartBuilder.buildActions = function buildActions(){
+
+    const actions = this.script.actions;
+    const scope = this.scope;
+
+    for(const name in actions){
+
+        const def = actions[name]; // name in hash might not have leading $
+        this.scope.demand(def.name); // name in def always has leading $
+
+        if(def.to){
+            const meow = def.name + def.to; // todo assert def has cmd at start
+            scope.bus().context(this.script).meow(meow);
+        }
+    }
+
+};
+
 let _id$1 = 0;
 
 function Gear(url, slot, parent, def, data){
@@ -4174,14 +4169,6 @@ function Cog(url, slot, parent, def, key){
     this.aliasValveMap = null;
     this.aliasContext = null;
 
-    this.bookUrls = null;
-    //this.traitUrls = null;
-
-    //this.traitInstances = [];
-    this.busInstances = [];
-
-
-
     this.load();
 
 }
@@ -4272,52 +4259,6 @@ Cog.prototype.prep = function(){
     this.loadLibs();
 
 };
-
-
-
-// Cog.prototype.loadBooks = function loadBooks(){
-//
-//     if(this.script.books.length === 0) {
-//         this.loadLibs();
-//         return;
-//     }
-//
-//     const urls = this.bookUrls = this.aliasContext.freshUrls(this.script.books);
-//
-//     if (urls.length) {
-//         this.scriptMonitor = new ScriptMonitor(urls, this.readBooks.bind(this));
-//     } else {
-//         this.readBooks();
-//     }
-//
-//
-//
-// };
-
-
-
-
-// Cog.prototype.readBooks = function readBooks() {
-//
-//     const urls = this.script.books;
-//
-//     if(this.aliasContext.shared) // need a new context
-//         this.aliasContext = this.aliasContext.clone();
-//
-//     for (let i = 0; i < urls.length; ++i) {
-//
-//         const url = urls[i];
-//         const book = ScriptLoader.read(url);
-//         if(book.type !== 'book')
-//             console.log('EXPECTED BOOK: got ', book.type, book.url);
-//
-//         this.aliasContext.injectAliasList(book.alias);
-//
-//     }
-//
-//     this.loadLibs();
-//
-// };
 
 
 Cog.prototype.loadLibs = function loadLibs(){
@@ -4416,14 +4357,12 @@ Cog.prototype.buildBuses = function buildBuses(){
     const scope = this.scope;
 
     const len = buses.length;
-    const instances = this.busInstances;
 
     for(let i = 0; i < len; ++i){
 
         const def = buses[i];
         const bus = scope.bus().context(this.script).meow(def); // todo add function support not just meow str
         bus.pull();
-        instances.push(bus);
 
     }
 
@@ -4530,7 +4469,6 @@ Cog.prototype.buildChains = function buildChains(){
     for(const slotName in chains){
 
         const def = chains[slotName];
-        //AliasContext.applySplitUrl(def);
 
         const slot = this.namedElements[slotName];
 
@@ -4564,57 +4502,9 @@ Cog.prototype.getNamedElement = function getNamedElement(name){
     return el;
 
 };
-//
-// Cog.prototype.buildTraits = function buildTraits(){
-//
-//     const traits = this.script.traits;
-//     const instances = this.traitInstances;
-//
-//     const len = traits.length;
-//     for(let i = 0; i < len; ++i){
-//
-//         const def = traits[i]; // todo url and base instead of url/root?
-//         const instance = new Trait(this, def);
-//         instances.push(instance);
-//         instance.script.prep();
-//
-//     }
-//
-// };
 
 
-// Cog.prototype.initTraits = function initTraits(){
-//
-//     const traits = this.traitInstances;
-//     const len = traits.length;
-//     for(let i = 0; i < len; ++i){
-//         const script = traits[i].script;
-//         script.init();
-//     }
-//
-// };
 
-// Cog.prototype.mountTraits = function mountTraits(){
-//
-//     const traits = this.traitInstances;
-//     const len = traits.length;
-//     for(let i = 0; i < len; ++i){
-//         const script = traits[i].script;
-//         script.mount();
-//     }
-//
-// };
-
-// Cog.prototype.startTraits = function startTraits(){
-//
-//     const traits = this.traitInstances;
-//     const len = traits.length;
-//     for(let i = 0; i < len; ++i){
-//         const script = traits[i].script;
-//         script.start();
-//     }
-//
-// };
 
 Cog.prototype.build = function build(){ // urls loaded
 
@@ -4622,8 +4512,6 @@ Cog.prototype.build = function build(){ // urls loaded
 
     // todo make relays dynamic to config/source changes
     // currently: hack on first data
-
-    const scope = this.scope;
 
     console.log(this.url,this.config);
 
@@ -4635,13 +4523,9 @@ Cog.prototype.build = function build(){ // urls loaded
     this.buildRelays();
     this.buildActions();
 
-
     // todo possibly init/refresh states and wires here?
 
     this.script.init();
-
-    // this.buildTraits(); // calls prep on all traits -- mixes states, actions, etc
-    // this.initTraits(); // calls init on all traits
 
     this.buildBuses();
     this.buildEvents();
@@ -4683,14 +4567,12 @@ Cog.prototype.mount = function mount(){
 
     this.mountDisplay();
     this.script.mount();
-    //this.mountTraits();
 
 };
 
 Cog.prototype.start = function start(){
 
     this.script.start();
-   // this.startTraits();
 
 };
 
