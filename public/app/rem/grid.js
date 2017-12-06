@@ -1,10 +1,16 @@
 
 Machine.cog({
 
-    display: '<table name="table">' +
-        '<tr name="row"></tr>' +
-        '</table>'
+    display: `<table name="table"><tbody>
+        <tr name="r"></tr>
+        <tr name="row"></tr>
+        </tbody>
+        </table>`
     ,
+
+    cogs: {
+      r: {url: 'REM row.js'}
+    },
 
     chains: {
         row: { url: 'REM row.js', source: 'records'}

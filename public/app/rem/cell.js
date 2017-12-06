@@ -1,18 +1,20 @@
 
 Machine.cog({
 
-    display: '<td name="cell">' +
-        '<div name="content"></div>' +
-        '</td>'
+    display:
+        `<td name="cell">
+            <gear url="renderer" config="column"></gear>
+        </td>`
     ,
-
-    gears: {
-        content: {url: 'renderer', config: 'column'}
-    },
 
     calcs: {
         column: 'props',
-        renderer: 'props.renderer',
+        renderer: 'props * toRenderer',
+    },
+
+    toRenderer: function(props){
+        return props.renderer || 'cells/text.js'
     }
+
 
 });

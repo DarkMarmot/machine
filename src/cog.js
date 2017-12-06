@@ -27,7 +27,7 @@ function Cog(url, slot, parent, def, key){
     this.tail = null;
     this.first = null;
     this.last = null;
-
+    this.virtual = !slot;
     this.placeholder = slot;
     this.elements = [];
     this.namedSlots = {};
@@ -50,9 +50,9 @@ function Cog(url, slot, parent, def, key){
     this.aliasContext = null;
 
     this.bookUrls = null;
-    this.traitUrls = null;
+    //this.traitUrls = null;
 
-    this.traitInstances = [];
+    //this.traitInstances = [];
     this.busInstances = [];
 
 
@@ -136,7 +136,7 @@ Cog.prototype.prep = function(){
     } else {
         // new context, apply valves from parent then add aliases from cog
         this.aliasContext = parent
-            ? parent.aliasContext.clone()
+            ? parent.aliasContext.clone(this.root)
             : new AliasContext(this.root); // root of application
         this.aliasContext.restrictAliasList(aliasValveMap);
         //this.aliasContext.injectAliasList(aliasList);
@@ -144,55 +144,55 @@ Cog.prototype.prep = function(){
     }
 
     this.script.prep();
-    this.loadBooks();
-
-};
-
-
-
-Cog.prototype.loadBooks = function loadBooks(){
-
-    if(this.script.books.length === 0) {
-        this.loadLibs();
-        return;
-    }
-
-    const urls = this.bookUrls = this.aliasContext.freshUrls(this.script.books);
-
-    if (urls.length) {
-        this.scriptMonitor = new ScriptMonitor(urls, this.readBooks.bind(this));
-    } else {
-        this.readBooks();
-    }
-
-
-
-};
-
-
-
-
-Cog.prototype.readBooks = function readBooks() {
-
-    const urls = this.script.books;
-
-    if(this.aliasContext.shared) // need a new context
-        this.aliasContext = this.aliasContext.clone();
-
-    for (let i = 0; i < urls.length; ++i) {
-
-        const url = urls[i];
-        const book = ScriptLoader.read(url);
-        if(book.type !== 'book')
-            console.log('EXPECTED BOOK: got ', book.type, book.url);
-
-        this.aliasContext.injectAliasList(book.alias);
-
-    }
-
     this.loadLibs();
 
 };
+
+
+
+// Cog.prototype.loadBooks = function loadBooks(){
+//
+//     if(this.script.books.length === 0) {
+//         this.loadLibs();
+//         return;
+//     }
+//
+//     const urls = this.bookUrls = this.aliasContext.freshUrls(this.script.books);
+//
+//     if (urls.length) {
+//         this.scriptMonitor = new ScriptMonitor(urls, this.readBooks.bind(this));
+//     } else {
+//         this.readBooks();
+//     }
+//
+//
+//
+// };
+
+
+
+
+// Cog.prototype.readBooks = function readBooks() {
+//
+//     const urls = this.script.books;
+//
+//     if(this.aliasContext.shared) // need a new context
+//         this.aliasContext = this.aliasContext.clone();
+//
+//     for (let i = 0; i < urls.length; ++i) {
+//
+//         const url = urls[i];
+//         const book = ScriptLoader.read(url);
+//         if(book.type !== 'book')
+//             console.log('EXPECTED BOOK: got ', book.type, book.url);
+//
+//         this.aliasContext.injectAliasList(book.alias);
+//
+//     }
+//
+//     this.loadLibs();
+//
+// };
 
 
 Cog.prototype.loadLibs = function loadLibs(){
@@ -229,22 +229,21 @@ Cog.prototype.buildLibs = function buildLibs() {
 
     }
 
-    this.loadTraits();
-
+    this.build();
 };
 
-
-Cog.prototype.loadTraits = function loadTraits(){
-
-    const urls = this.traitUrls = this.aliasContext.freshUrls(this.script.traits);
-
-    if(urls.length){
-        this.scriptMonitor = new ScriptMonitor(urls, this.build.bind(this));
-    } else {
-        this.build();
-    }
-
-};
+//
+// Cog.prototype.loadTraits = function loadTraits(){
+//
+//     const urls = this.traitUrls = this.aliasContext.freshUrls(this.script.traits);
+//
+//     if(urls.length){
+//         this.scriptMonitor = new ScriptMonitor(urls, this.build.bind(this));
+//     } else {
+//         this.build();
+//     }
+//
+// };
 
 Cog.prototype.subscribeToParentSource = PartBuilder.subscribeToParentSource;
 Cog.prototype.extendDefToConfig = PartBuilder.extendDefToConfig;
@@ -305,6 +304,22 @@ Cog.prototype.buildBuses = function buildBuses(){
 
 };
 
+Cog.prototype.buildTraits = function buildTraits(){
+
+    const traits = this.script.traits;
+    const children = this.children;
+
+    for(let i = 0; i < traits.length; i++) {
+
+        const def = traits[i] || null;
+        const url = this.aliasContext.resolveUrl(def.url, def.root);
+        let trait = new Cog(url, null, this, def);
+        children.push(trait);
+
+    }
+
+};
+
 
 Cog.prototype.buildCogs = function buildCogs(){
 
@@ -320,7 +335,6 @@ Cog.prototype.buildCogs = function buildCogs(){
     for(const slotName in cogs){
 
         const def = cogs[slotName] || null;
-        //AliasContext.applySplitUrl(def);
 
         const slot = this.namedElements[slotName];
         let cog;
@@ -425,57 +439,57 @@ Cog.prototype.getNamedElement = function getNamedElement(name){
     return el;
 
 };
+//
+// Cog.prototype.buildTraits = function buildTraits(){
+//
+//     const traits = this.script.traits;
+//     const instances = this.traitInstances;
+//
+//     const len = traits.length;
+//     for(let i = 0; i < len; ++i){
+//
+//         const def = traits[i]; // todo url and base instead of url/root?
+//         const instance = new Trait(this, def);
+//         instances.push(instance);
+//         instance.script.prep();
+//
+//     }
+//
+// };
 
-Cog.prototype.buildTraits = function buildTraits(){
 
-    const traits = this.script.traits;
-    const instances = this.traitInstances;
+// Cog.prototype.initTraits = function initTraits(){
+//
+//     const traits = this.traitInstances;
+//     const len = traits.length;
+//     for(let i = 0; i < len; ++i){
+//         const script = traits[i].script;
+//         script.init();
+//     }
+//
+// };
 
-    const len = traits.length;
-    for(let i = 0; i < len; ++i){
+// Cog.prototype.mountTraits = function mountTraits(){
+//
+//     const traits = this.traitInstances;
+//     const len = traits.length;
+//     for(let i = 0; i < len; ++i){
+//         const script = traits[i].script;
+//         script.mount();
+//     }
+//
+// };
 
-        const def = traits[i]; // todo url and base instead of url/root?
-        const instance = new Trait(this, def);
-        instances.push(instance);
-        instance.script.prep();
-
-    }
-
-};
-
-
-Cog.prototype.initTraits = function initTraits(){
-
-    const traits = this.traitInstances;
-    const len = traits.length;
-    for(let i = 0; i < len; ++i){
-        const script = traits[i].script;
-        script.init();
-    }
-
-};
-
-Cog.prototype.mountTraits = function mountTraits(){
-
-    const traits = this.traitInstances;
-    const len = traits.length;
-    for(let i = 0; i < len; ++i){
-        const script = traits[i].script;
-        script.mount();
-    }
-
-};
-
-Cog.prototype.startTraits = function startTraits(){
-
-    const traits = this.traitInstances;
-    const len = traits.length;
-    for(let i = 0; i < len; ++i){
-        const script = traits[i].script;
-        script.start();
-    }
-
-};
+// Cog.prototype.startTraits = function startTraits(){
+//
+//     const traits = this.traitInstances;
+//     const len = traits.length;
+//     for(let i = 0; i < len; ++i){
+//         const script = traits[i].script;
+//         script.start();
+//     }
+//
+// };
 
 Cog.prototype.build = function build(){ // urls loaded
 
@@ -488,7 +502,8 @@ Cog.prototype.build = function build(){ // urls loaded
 
     console.log(this.url,this.config);
 
-    this.mount(); // mounts display, calls script.mount, then mount for all traits
+    if(!this.virtual)
+        this.mount(); // mounts display, calls script.mount, then mount for all traits
 
     this.buildStates();
     this.buildWires();
@@ -500,15 +515,20 @@ Cog.prototype.build = function build(){ // urls loaded
 
     this.script.init();
 
-    this.buildTraits(); // calls prep on all traits -- mixes states, actions, etc
-    this.initTraits(); // calls init on all traits
+    // this.buildTraits(); // calls prep on all traits -- mixes states, actions, etc
+    // this.initTraits(); // calls init on all traits
 
     this.buildBuses();
     this.buildEvents();
 
-    this.buildCogs(); // placeholders for direct children, async loads possible
-    this.buildGears();
-    this.buildChains();
+    if(!this.virtual) {
+        this.buildCogs(); // placeholders for direct children, async loads possible
+        this.buildGears();
+        this.buildChains();
+    }
+
+    this.buildTraits(); // virtual cogs
+
     this.start(); // calls start for all traits
 
 };
@@ -538,14 +558,14 @@ Cog.prototype.mount = function mount(){
 
     this.mountDisplay();
     this.script.mount();
-    this.mountTraits();
+    //this.mountTraits();
 
 };
 
 Cog.prototype.start = function start(){
 
     this.script.start();
-    this.startTraits();
+   // this.startTraits();
 
 };
 

@@ -25,8 +25,8 @@ function AliasContext(sourceRoot, aliasMap, valveMap){
 
 
 
-AliasContext.prototype.clone = function(){
-    return new AliasContext(this.sourceRoot, this.aliasMap);
+AliasContext.prototype.clone = function(newRoot){
+    return new AliasContext(newRoot || this.sourceRoot, this.aliasMap);
 };
 
 

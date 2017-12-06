@@ -1,15 +1,14 @@
 
 Machine.cog({
 
-    display: '<tr name="row">' +
-        // '<td name="cell"></td>' +
-    '<chain url="REM cell.js" source="columns"></chain>' +
+    display: '<tr>' +
+    '<td name="cells"></td>' +
         '</tr>'
     ,
 
-    // chains: {
-    //     cell: {url: 'REM cell.js', source: 'columns'}
-    // },
+    chains: {
+        cells: {url: 'REM cell.js', source: 'columns'}
+    },
 
     calcs: {
         record: 'props',

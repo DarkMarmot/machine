@@ -82,8 +82,8 @@ function prepDisplay(def) {
 
         const el = els[i];
         let name = el.getAttribute('name');
-        if(!name){
-            name =  '__' + i;
+        if(!name) {
+            name = '__' + i;
             el.setAttribute('name', name);
         }
 
@@ -110,7 +110,6 @@ function prepDisplay(def) {
     }
 
 }
-
 
 
 function prepLibDefs(data){
@@ -163,42 +162,6 @@ function prepGearDefs(data){
     return data;
 
 }
-
-// function prepDataDefs(data, asActions){
-//
-//     if(!data)
-//         return data;
-//
-//     for(const name in data){
-//
-//         const val = data[name];
-//         const empty = !val;
-//         let def;
-//
-//         if(typeof val === 'function'){
-//             def = {value: val};
-//         } else if(typeof val === 'object'){
-//             def = val;
-//         } else if(empty) {
-//             def = {};
-//         } else {
-//             def = {value: function(){ return val;}}
-//         }
-//
-//         def.hasValue = def.hasOwnProperty('value');
-//         def.hasAccept = def.hasOwnProperty('accept');
-//         def.value = def.hasValue && def.value;
-//         def.accept = def.hasAccept ? createWhiteList(def.hasAccept) : NOOP;
-//         def.name = (asActions && name[0] !== '$') ? '$' + name : name;
-//
-//         data[name] = def;
-//
-//     }
-//
-//     return data;
-//
-// }
-
 
 function prepStateDefs(data){
 

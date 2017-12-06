@@ -5,6 +5,7 @@ Machine.cog({
 console.log('index mount');
     },
 
+
     display:
 
         // '<div>' +
@@ -13,12 +14,12 @@ console.log('index mount');
         // '<cog url="LOVELACE"></cog>' +
         // // '<div class="tabs is-toggle"><ul><slot name="menu"></slot></ul></div>' +
         // '<slot name="button"></slot>' +
-        '<cog url="BULMA progress.js" config="_progress"></cog>' +
+        // '<cog url="BULMA progress.js" config="_progress"></cog>' +
         // // '<cog url="BULMA_ITEMS anchor.js" config="_anchor"></cog>' +
         // '<cog url="BULMA_ITEMS icon_label.js" config="meowing"></cog>' +
-        '<slot name="selectable"></slot>' +
+        // '<slot name="selectable"></slot>' +
         // '<cog url="BULMA tabs.js" config="_tabsConfig"></cog>' +
-        '<cog url="BULMA breadcrumb.js" config="_breadcrumbConfig"></cog>' +
+        // '<cog url="BULMA breadcrumb.js" config="_breadcrumbConfig"></cog>' +
     '<slot name="grid"></slot>'
         // '<cog url="BULMA list.js" config="_breadcrumbConfig"></cog>'
     // '<div class="tabs is-toggle"><ul><slot name="chain"></slot></ul></div>',
@@ -28,15 +29,23 @@ console.log('index mount');
 
         APP: './app',
         REM: 'APP rem',
+        REM_CELLS: 'REM cells',
         JS: './js',
         LOVELACE: 'APP lovelace.js',
         D3: 'JS d3.min.js',
         BULMA: 'APP bulma',
-        BULMA_ITEMS: 'BULMA items'
+        BULMA_ITEMS: 'BULMA items',
+        TRAIT: 'APP traits',
+        AUTH_API: 'http://apiv3.iucnredlist.org/api/v3/version'
+    },
+
+    actions: {
+      authResponse$: ' > _authResponse' // todo require verb
     },
 
     states: {
 
+        _authResponse: 'cat',
         _anchor: function(){ return { label: 'Kitten Happy!'}},
         _progress: function(){ return { valueFrom: '_animalPct'}},
 
@@ -84,9 +93,9 @@ console.log('index mount');
             }
         },
 
-        _gridColumns: function(){ return [{field: 'label', renderer: 'REM text.js'},
-            {field: 'icon', renderer: 'REM text.js'},
-            {field: 'value', renderer: 'REM text.js'}]
+        _gridColumns: function(){ return [{field: 'label', renderer: 'REM_CELLS text.js'},
+            {field: 'icon', },
+            {field: 'value', renderer: 'REM_CELLS text.js'}]
         },
 
 
@@ -98,9 +107,17 @@ console.log('index mount');
         }
     },
 
+    traits: [
+        {url: 'TRAIT fetch.js', api: 'AUTH_API', response$: 'authResponse$', auto: true}
+    ],
+
     buses: [
+        '_authResponse * log'
       // 'others > _animals'
     ],
+    log: function(d, c){
+      console.log('GOT LOG:', d, c);
+    },
     wires: {
         animal: 'bunny'
     },
@@ -136,15 +153,15 @@ console.log('index mount');
             config: '_gridConfig'
 
         },
-        selectable: {
-            url: 'BULMA tabs.js',
-            renderer: 'BULMA_ITEMS icon_label.js',
-            items: '_animals',
-            clickTo: 'animal$',
-            activeFrom: 'animal',
-            classes: 'is-large',
-            // config: 'meow'
-        },
+        // selectable: {
+        //     url: 'BULMA tabs.js',
+        //     renderer: 'BULMA_ITEMS icon_label.js',
+        //     items: '_animals',
+        //     clickTo: 'animal$',
+        //     activeFrom: 'animal',
+        //     classes: 'is-large',
+        //     // config: 'meow'
+        // },
 
         // progress: {
         //     url: 'BULMA progress.js',
