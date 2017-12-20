@@ -19,7 +19,7 @@ const define = window.define = function define(){
 
 };
 
-define.amd = true;
+define.amd = {};
 
 Machine.lib = define;
 

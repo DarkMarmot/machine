@@ -206,7 +206,6 @@ Cog.prototype.buildEvents = function buildEvents(){
     // todo add compile check -- 'target el' not found in display err!
 
     const events = this.script.events;
-    const buses = this.busInstances;
     const scope = this.scope;
 
     for(const name in events){
@@ -219,11 +218,9 @@ Cog.prototype.buildEvents = function buildEvents(){
         if(Array.isArray(value)){
             for(let i = 0; i < value.length; ++i){
                 const bus = scope.bus().context(this.script).target(el).meow(value[i]);
-                buses.push(bus);
             }
         } else {
             const bus = scope.bus().context(this.script).target(el).meow(value);
-            buses.push(bus);
         }
 
     }
@@ -394,17 +391,18 @@ Cog.prototype.build = function build(){ // urls loaded
 
     console.log(this.url,this.config);
 
-    if(!this.virtual)
-        this.mount(); // mounts display, calls script.mount, then mount for all traits
+    this.script.init();
 
     this.buildStates();
     this.buildWires();
     this.buildRelays();
     this.buildActions();
 
+    if(!this.virtual)
+        this.mount(); // mounts display, calls script.mount, then mount for all traits
+
     // todo possibly init/refresh states and wires here?
 
-    this.script.init();
 
     this.buildBuses();
     this.buildEvents();
@@ -471,7 +469,8 @@ Cog.prototype.destroy = function(){
 
     for(let i = 0; i < this.elements.length; ++i){
         const e = this.elements[i];
-        e.parentNode.removeChild(e);
+        if(e.parentNode)
+            e.parentNode.removeChild(e);
     }
 
     this.script.destroy();
