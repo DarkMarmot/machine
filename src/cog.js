@@ -205,12 +205,12 @@ Cog.prototype.buildEvents = function buildEvents(){
 
     // todo add compile check -- 'target el' not found in display err!
 
-    const events = this.script.events;
+    const nodes = this.script.nodes;
     const scope = this.scope;
 
-    for(const name in events){
+    for(const name in nodes){
 
-        const value = events[name];
+        const value = nodes[name];
         const el = this.script.els[name];
 
         _ASSERT_HTML_ELEMENT_EXISTS(name, el);
@@ -218,9 +218,11 @@ Cog.prototype.buildEvents = function buildEvents(){
         if(Array.isArray(value)){
             for(let i = 0; i < value.length; ++i){
                 const bus = scope.bus().context(this.script).target(el).meow(value[i]);
+                bus.pull();
             }
         } else {
             const bus = scope.bus().context(this.script).target(el).meow(value);
+            bus.pull();
         }
 
     }

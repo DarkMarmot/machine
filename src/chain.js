@@ -309,6 +309,9 @@ Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
         }
     }
 
+    if(len > 0)
+        this.killPlaceholder();
+
     this.tail = children.length > 0 ? children[children.length - 1] : null;
     this.head = children.length > 0 ? children[0] : null;
 

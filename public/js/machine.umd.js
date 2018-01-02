@@ -1503,11 +1503,11 @@ function Word(content){
 function parseHook(phrase){
 
     const chunks = splitHookDelimiters(phrase.content);
+
     while(chunks.length) {
 
         const content = chunks.shift();
-        const word = new Word(content);
-        phrase.words.push(word);
+        phrase.words.push(content);
 
     }
 
@@ -1681,7 +1681,11 @@ function runPhrase(bus, phrase){
     const target = bus.target();
     const multiple = words.length > 1;
 
-    if(name === 'THEN_READ'){
+    if(name === 'HOOK'){
+        const hook = words.shift();
+        Catbus.runHook(bus, hook, words);
+    }
+    else if(name === 'THEN_READ'){
         if(multiple){
             bus.msg(getThenReadMultiple(scope, words));
         } else {
@@ -2263,6 +2267,10 @@ class Bus {
             throw new Error('Cannot exit fork, parent does not exist!');
 
         return this.parent;
+
+    };
+
+    hook(name, words, scope, context, target){
 
     };
 
@@ -3060,10 +3068,229 @@ function push(stream, arr, len, name){
 
 NOOP_SOURCE.addStubs(ArraySource);
 
+function ifUndefined(msg, source){
+    return msg === undefined;
+}
+
+function ifNotUndefined(msg, source){
+    return msg !== undefined;
+}
+
+function ifFalse(msg, source){
+    return msg === false;
+}
+
+function ifNotFalse(msg, source){
+    return msg !== false;
+}
+
+function ifFalsey(msg, source){
+    return !msg;
+}
+
+function ifTrue(msg, source){
+    return msg === true;
+}
+
+function ifNotTrue(msg, source){
+    return msg !== true;
+}
+
+function ifTruthy(msg, source){
+    return !!msg;
+}
+
+function ifNull(msg, source){
+    return msg === null;
+}
+
+function ifNotNull(msg, source){
+    return msg !== null;
+}
+
+function filterNull(bus) {
+    bus.filter(ifNull, null);
+}
+
+function filterNotNull(bus) {
+    bus.filter(ifNotNull, null);
+}
+
+function filterFalse(bus) {
+    bus.filter(ifFalse, null);
+}
+
+function filterNotFalse(bus) {
+    bus.filter(ifNotFalse, null);
+}
+
+function filterUndefined(bus) {
+    bus.filter(ifUndefined, null);
+}
+
+function filterNotUndefined(bus) {
+    bus.filter(ifNotUndefined, null);
+}
+
+function filterFalsey(bus) {
+    bus.filter(ifFalsey, null);
+}
+
+function filterTrue(bus) {
+    bus.filter(ifTrue, null);
+}
+
+function filterNotTrue(bus) {
+    bus.filter(ifNotTrue, null);
+}
+
+function filterTruthy(bus) {
+    bus.filter(ifTruthy, null);
+}
+
+function filterHooks(target){ // target is Catbus
+
+    target.hook('IF_UNDEFINED', filterUndefined);
+    target.hook('IF_NOT_UNDEFINED', filterNotUndefined);
+    target.hook('IF_NULL', filterNull);
+    target.hook('IF_NOT_NULL', filterNotNull);
+    target.hook('IF_FALSE', filterFalse);
+    target.hook('IF_NOT_FALSE', filterNotFalse);
+    target.hook('IF_FALSEY', filterFalsey);
+    target.hook('IF_TRUE', filterTrue);
+    target.hook('IF_NOT_TRUE', filterNotTrue);
+    target.hook('IF_TRUTHY', filterTruthy);
+
+}
+
+function text(target, msg, source){
+    target.innerText = msg;
+}
+
+function blur(target, msg, source){
+    target.blur();
+}
+
+function focus(target, msg, source){
+    target.focus();
+}
+
+function value$1(target, msg, source){
+    target.value = msg;
+}
+
+function classes(target, msg, source){
+
+    const toHash = function(acc, v){ acc[v] = true; return acc;};
+    const current = target.className.split(' ').reduce(toHash, {});
+
+    for(const k in msg){
+        current[k] = msg[k];
+    }
+
+    const result = [];
+    for(const k in current) {
+        if(current[k])
+            result.push(k);
+    }
+
+    target.className = result.join(' ');
+
+}
+
+function _attr(target, name, value) {
+    if(value === undefined || value === null) {
+        target.removeAttribute(name);
+    } else {
+        target.setAttribute(name, value);
+    }
+}
+
+
+function attrs(target, msg, source) {
+    for(const k in msg){
+        _attr(target, k, msg[k]);
+    }
+}
+
+
+function _prop(target, name, value) {
+    target[name] = value;
+}
+
+
+function props(target, msg, source) {
+    for(const k in msg){
+        _prop(target, k, msg[k]);
+    }
+}
+
+function _style(target, name, value) {
+    target.style[name] = value;
+}
+
+
+function styles(target, msg, source) {
+    for(const k in msg){
+        _style(target, k, msg[k]);
+    }
+}
+
+
+function getMsgSideEffect(sideEffectFunc){
+
+    return function embeddedSideEffect(bus) {
+
+        const target = bus.target(); // todo no target checks
+        const f = function(msg, source){
+            sideEffectFunc.call(null, target, msg, source);
+            return msg;
+        };
+
+        bus.msg(f);
+    }
+
+}
+
+
+function domHooks(target){ // target is Catbus
+
+    target.hook('TEXT', getMsgSideEffect(text));
+    target.hook('FOCUS', getMsgSideEffect(focus));
+    target.hook('BLUR', getMsgSideEffect(blur));
+    target.hook('VALUE', getMsgSideEffect(value$1));
+    target.hook('CLASSES', getMsgSideEffect(classes));
+    target.hook('ATTRS', getMsgSideEffect(attrs));
+    target.hook('PROPS', getMsgSideEffect(props));
+    target.hook('STYLES', getMsgSideEffect(styles));
+
+}
+
+function log(bus, args){
+
+        const caption = Array.isArray(args) && args.length ? args[0] : '';
+
+        const f = function(msg, source){
+            console.log('LOG: ', caption, ' -- ', msg, ' | ', source);
+            return msg;
+        };
+
+        bus.msg(f);
+
+}
+
+
+function logHooks(target){ // target is Catbus
+
+    target.hook('LOG', log);
+
+}
+
 const Catbus = {};
 
 let _batchQueue = [];
 let _primed = false;
+const _hooksByName = {};
 
 Catbus.bus = function(){
     return new Bus();
@@ -3079,6 +3306,16 @@ Catbus.fromInterval = function(name, delay, msg){
 
     return bus;
 
+};
+
+Catbus.hook = function(name, func){ // func(argArray) with this as bus
+    _hooksByName[name] = func;
+};
+
+Catbus.runHook = function(bus, name, words){
+    console.log('bus', bus, name, words);
+    const func = _hooksByName[name]; // todo func not found
+    func.call(bus, bus, words);
 };
 
 Catbus.fromEvent = function(target, eventName, useCapture){
@@ -3178,6 +3415,10 @@ Catbus.flush = function(){
     }
 
 };
+
+filterHooks(Catbus);
+domHooks(Catbus);
+logHooks(Catbus);
 
 const pool = [];
 
@@ -3918,6 +4159,9 @@ Chain.prototype.buildCogsByIndex = function buildCogsByIndex(msg){
         }
     }
 
+    if(len > 0)
+        this.killPlaceholder();
+
     this.tail = children.length > 0 ? children[children.length - 1] : null;
     this.head = children.length > 0 ? children[0] : null;
 
@@ -4323,12 +4567,12 @@ Cog.prototype.buildEvents = function buildEvents(){
 
     // todo add compile check -- 'target el' not found in display err!
 
-    const events = this.script.events;
+    const nodes = this.script.nodes;
     const scope = this.scope;
 
-    for(const name in events){
+    for(const name in nodes){
 
-        const value = events[name];
+        const value = nodes[name];
         const el = this.script.els[name];
 
         _ASSERT_HTML_ELEMENT_EXISTS(name, el);
@@ -4336,9 +4580,11 @@ Cog.prototype.buildEvents = function buildEvents(){
         if(Array.isArray(value)){
             for(let i = 0; i < value.length; ++i){
                 const bus = scope.bus().context(this.script).target(el).meow(value[i]);
+                bus.pull();
             }
         } else {
             const bus = scope.bus().context(this.script).target(el).meow(value);
+            bus.pull();
         }
 
     }
