@@ -391,8 +391,6 @@ Cog.prototype.build = function build(){ // urls loaded
     // todo make relays dynamic to config/source changes
     // currently: hack on first data
 
-    console.log(this.url,this.config);
-
     this.script.init();
 
     this.buildStates();

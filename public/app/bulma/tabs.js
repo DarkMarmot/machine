@@ -1,22 +1,27 @@
 
 Machine.cog({
 
-    display: '<div name="tabs"><ul>' +
-    '<chain url="BULMA list_item.js" config="props" source="items"></chain>' +
+    display: '<div name="tabs" class="tabs"><ul>' +
+        '<slot name="list"></slot>' +
     '</ul></div>',
 
     relays: {
-        items: '.items'
+        items: '.items',
+        clickTo$: 'props * toEither'
     },
 
-    buses: [
-        '.classes * render'
-    ],
+    nodes: {
+        tabs: '.classes # CLASSES'
+    },
 
-    render: function(classes){
 
-        this.dom.tabs.setClasses('tabs ' + (classes || ''));
+    chains: {
+          list: {url: 'BULMA list_item.js', config: 'props', source: 'items', clickTo: 'clickTo$'}
+    },
 
+    toEither: function(msg){
+        return msg.clickTo || msg.activeFrom;
     }
+
 
 });

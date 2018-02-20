@@ -17,10 +17,10 @@ console.log('index mount');
         // '<cog url="BULMA progress.js" config="_progress"></cog>' +
         // // '<cog url="BULMA_ITEMS anchor.js" config="_anchor"></cog>' +
         // '<cog url="BULMA_ITEMS icon_label.js" config="meowing"></cog>' +
-        // '<slot name="selectable"></slot>' +
-        // '<cog url="BULMA tabs.js" config="_tabsConfig"></cog>' +
+        '<slot name="selectable"></slot>' +
+        '<cog url="BULMA tabs.js" config="_tabsConfig"></cog>'
         // '<cog url="BULMA breadcrumb.js" config="_breadcrumbConfig"></cog>' +
-    '<slot name="grid"></slot>'
+    // '<slot name="grid"></slot>'
         // '<cog url="BULMA list.js" config="_breadcrumbConfig"></cog>'
     // '<div class="tabs is-toggle"><ul><slot name="chain"></slot></ul></div>',
 ,
@@ -79,10 +79,14 @@ console.log('index mount');
         _tabsConfig: function(){ return {
 
                 renderer: 'BULMA_ITEMS icon_label.js',
-                items: '_animals',
-                clickTo: 'animal$',
+                items: () => ([{label: 'moo', value: 'c', icon: 'fa fa-home'},
+                    {label: 'puppy', value: 'd', icon: 'fa fa-cog'},
+                    {label: 'car', value: 'b', icon: 'fa fa-space-shuttle'}
+                ])
+                ,
+                clickTo: 'animal',
                 activeFrom: 'animal',
-                classes: 'is-right is-toggle is-boxed is-large',
+                classes: {'is-right': true, 'is-toggle': true, 'is-boxed': true, 'is-large': true},
 
             }
         },
@@ -120,9 +124,9 @@ console.log('index mount');
     log: function(d, c){
       console.log('GOT LOG:', d, c);
     },
-    wires: {
-        animal: 'bunny'
-    },
+    // wires: {
+    //     animal: 'bunny'
+    // },
 
 
     libs: {
@@ -155,15 +159,15 @@ console.log('index mount');
             config: '_gridConfig'
 
         },
-        // selectable: {
-        //     url: 'BULMA tabs.js',
-        //     renderer: 'BULMA_ITEMS icon_label.js',
-        //     items: '_animals',
-        //     clickTo: 'animal$',
-        //     activeFrom: 'animal',
-        //     classes: 'is-large',
-        //     // config: 'meow'
-        // },
+        selectable: {
+            url: 'BULMA tabs.js',
+            renderer: 'BULMA_ITEMS icon_label.js',
+            items: '_animals',
+            clickTo: 'animal',
+            activeFrom: 'animal',
+            classes: 'is-large',
+            // config: 'meow'
+        },
 
         // progress: {
         //     url: 'BULMA progress.js',

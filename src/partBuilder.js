@@ -54,15 +54,20 @@ PartBuilder.extendDefToConfig = function(config){
     const def = this.def;
     const result = {};
 
+    // reversed this to make def win
+    for(const k in config){
+        result[k] = config[k];
+    }
+
     for(const k in def){
         if(!urlOrConfigHash.hasOwnProperty(k)){
             result[k] = def[k];
         }
     }
 
-    for(const k in config){
-        result[k] = config[k];
-    }
+    // for(const k in config){
+    //     result[k] = config[k];
+    // }
 
     return result;
 

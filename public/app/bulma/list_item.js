@@ -12,7 +12,7 @@ Machine.cog({
         activeFrom: '.activeFrom'
     },
 
-    events: {
+    nodes: {
         item: '@ click * preventDefault | .value, .toggle, activeFrom * toClickValue > clickTo$',
     },
 
@@ -60,6 +60,10 @@ Machine.cog({
             'is-active': active
         });
 
+    },
+
+    defaultClickTo(msg){
+        return msg.clickTo || msg.activeFrom;
     }
 
 
